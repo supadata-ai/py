@@ -59,6 +59,13 @@ class Supadata:
         url = f"{self.base_url}{path}"
         response = self.session.request(method, url, **kwargs)
 
+        # Treat 206 Partial Content as an error for transcript endpoints
+        if response.status_code == 206 and ('/transcript' in path):
+            error_data = self._camel_to_snake(response.json())
+            if 'error' in error_data:
+                raise requests.exceptions.HTTPError(error_data['error'])
+            raise requests.exceptions.HTTPError("No transcript available")
+
         try:
             response.raise_for_status()
             return self._camel_to_snake(response.json())

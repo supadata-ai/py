@@ -19,33 +19,33 @@ pip install supadata
 from supadata import Supadata
 
 # Initialize the client
-client = Supadata(api_key="YOUR_API_KEY")
+supadata = Supadata(api_key="YOUR_API_KEY")
 
 # Get YouTube transcript
-transcript = client.get_transcript(video_id="VIDEO_ID")
+transcript = supadata.youtube.transcript(video_id="VIDEO_ID")
 print(f"Got transcript in {transcript['lang']}")
 
 # Translate YouTube transcript to Spanish
-translated = client.translate_transcript(
+translated = supadata.youtube.translate(
     video_id="VIDEO_ID",
     lang="es"
 )
 print(f"Got translated transcript in {translated['lang']}")
 
 # Get plain text transcript
-text_transcript = client.get_transcript(
+text_transcript = supadata.youtube.transcript(
     video_id="VIDEO_ID",
     text=True
 )
 print(text_transcript['content'])
 
 # Scrape web content
-web_content = client.scrape("https://supadata.ai")
+web_content = supadata.web.scrape("https://supadata.ai")
 print(f"Page title: {web_content['name']}")
-print(f"Content length: {web_content['countCharacters']} characters")
+print(f"Content length: {web_content['count_characters']} characters")
 
 # Map website URLs
-site_map = client.map("https://supadata.ai")
+site_map = supadata.web.map("https://supadata.ai")
 print(f"Found {len(site_map['urls'])} URLs")
 ```
 
@@ -57,7 +57,7 @@ The SDK uses the standard `requests` library and will raise `requests.exceptions
 from requests.exceptions import RequestException
 
 try:
-    transcript = client.get_transcript(video_id="INVALID_ID")
+    transcript = supadata.youtube.transcript(video_id="INVALID_ID")
 except RequestException as error:
     print(f"API request failed: {error}")
     if error.response is not None:

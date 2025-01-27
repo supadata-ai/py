@@ -2,16 +2,10 @@
 
 from typing import Dict, Any
 import requests
-from dataclasses import asdict
 
-from .types import (
-    Transcript,
-    TranslatedTranscript,
-    TranscriptChunk,
-    Scrape,
-    Map,
-    Error,
-)
+from .youtube import YouTube
+from .web import Web
+from .types import Error
 
 
 class Supadata:
@@ -31,94 +25,9 @@ class Supadata:
             "Accept": "application/json"
         })
 
-    def get_transcript(self, video_id: str, text: bool = False) -> Transcript:
-        """Get transcript for a YouTube video.
-
-        Args:
-            video_id: YouTube video ID
-            text: Whether to return plain text instead of segments
-
-        Returns:
-            Transcript object containing content, language and available languages
-
-        Raises:
-            requests.exceptions.RequestException: If the API request fails
-        """
-        response = self._request("GET", "/youtube/transcript", params={
-            "videoId": video_id,
-            "text": text
-        })
-
-        # Convert chunks if present
-        if not text and isinstance(response["content"], list):
-            response["content"] = [
-                TranscriptChunk(**chunk) for chunk in response["content"]
-            ]
-
-        return Transcript(**response)
-
-    def translate_transcript(
-        self,
-        video_id: str,
-        lang: str,
-        text: bool = False
-    ) -> TranslatedTranscript:
-        """Get translated transcript for a YouTube video.
-
-        Args:
-            video_id: YouTube video ID
-            lang: Target language code (e.g., 'es' for Spanish)
-            text: Whether to return plain text instead of segments
-
-        Returns:
-            TranslatedTranscript object containing translated content
-
-        Raises:
-            requests.exceptions.RequestException: If the API request fails
-        """
-        response = self._request("GET", "/youtube/transcript/translate", params={
-            "videoId": video_id,
-            "lang": lang,
-            "text": text
-        })
-
-        # Convert chunks if present
-        if not text and isinstance(response["content"], list):
-            response["content"] = [
-                TranscriptChunk(**chunk) for chunk in response["content"]
-            ]
-
-        return TranslatedTranscript(**response)
-
-    def scrape(self, url: str) -> Scrape:
-        """Scrape content from a web page.
-
-        Args:
-            url: URL to scrape
-
-        Returns:
-            Scrape object containing the extracted content
-
-        Raises:
-            requests.exceptions.RequestException: If the API request fails
-        """
-        response = self._request("GET", "/web/scrape", params={"url": url})
-        return Scrape(**response)
-
-    def map(self, url: str) -> Map:
-        """Generate a site map for a website.
-
-        Args:
-            url: Base URL to map
-
-        Returns:
-            Map object containing discovered URLs
-
-        Raises:
-            requests.exceptions.RequestException: If the API request fails
-        """
-        response = self._request("GET", "/web/map", params={"url": url})
-        return Map(**response)
+        # Initialize namespaces
+        self.youtube = YouTube(self._request)
+        self.web = Web(self._request)
 
     def _camel_to_snake(self, d: Dict[str, Any]) -> Dict[str, Any]:
         """Convert dictionary keys from camelCase to snake_case."""

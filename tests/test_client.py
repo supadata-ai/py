@@ -61,7 +61,7 @@ def test_get_transcript_chunks(client: Supadata, requests_mock) -> None:
         json=mock_response
     )
 
-    transcript = client.get_transcript(video_id=video_id)
+    transcript = client.youtube.transcript(video_id=video_id)
     assert isinstance(transcript, Transcript)
     assert isinstance(transcript.content[0], TranscriptChunk)
     assert transcript.content[0].text == "Hello"
@@ -82,7 +82,7 @@ def test_get_transcript_text(client: Supadata, requests_mock) -> None:
         json=mock_response
     )
 
-    transcript = client.get_transcript(video_id=video_id, text=True)
+    transcript = client.youtube.transcript(video_id=video_id, text=True)
     assert isinstance(transcript, Transcript)
     assert isinstance(transcript.content, str)
     assert transcript.content == "Hello, this is a test transcript"
@@ -100,7 +100,7 @@ def test_translate_transcript(client: Supadata, requests_mock) -> None:
         json=mock_response
     )
 
-    transcript = client.translate_transcript(
+    transcript = client.youtube.translate(
         video_id=video_id,
         lang="es",
         text=True
@@ -127,7 +127,7 @@ def test_scrape(client: Supadata, requests_mock) -> None:
         json=mock_response
     )
 
-    content = client.scrape(url=url)
+    content = client.web.scrape(url=url)
     assert isinstance(content, Scrape)
     assert content.url == url
     assert content.name == "Test Page"
@@ -149,7 +149,7 @@ def test_map(client: Supadata, requests_mock) -> None:
         json=mock_response
     )
 
-    site_map = client.map(url=url)
+    site_map = client.web.map(url=url)
     assert isinstance(site_map, Map)
     assert len(site_map.urls) == 2
 
@@ -170,7 +170,7 @@ def test_error_handling(client: Supadata, requests_mock) -> None:
     )
 
     with pytest.raises(requests.exceptions.HTTPError) as exc_info:
-        client.get_transcript(video_id=video_id)
+        client.youtube.transcript(video_id=video_id)
 
     error = exc_info.value.args[0]
     assert isinstance(error, Error)

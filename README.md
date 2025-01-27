@@ -23,48 +23,48 @@ supadata = Supadata(api_key="YOUR_API_KEY")
 
 # Get YouTube transcript
 transcript = supadata.youtube.transcript(video_id="VIDEO_ID")
-print(f"Got transcript in {transcript['lang']}")
+print(f"Got transcript {transcript.content}")
 
 # Translate YouTube transcript to Spanish
 translated = supadata.youtube.translate(
     video_id="VIDEO_ID",
     lang="es"
 )
-print(f"Got translated transcript in {translated['lang']}")
+print(f"Got translated transcript in {translated.lang}")
 
 # Get plain text transcript
 text_transcript = supadata.youtube.transcript(
     video_id="VIDEO_ID",
     text=True
 )
-print(text_transcript['content'])
+print(text_transcript.content)
 
 # Scrape web content
 web_content = supadata.web.scrape("https://supadata.ai")
-print(f"Page title: {web_content['name']}")
-print(f"Content length: {web_content['count_characters']} characters")
+print(f"Page title: {web_content.name}")
+print(f"Page content: {web_content.content}")
 
 # Map website URLs
 site_map = supadata.web.map("https://supadata.ai")
-print(f"Found {len(site_map['urls'])} URLs")
+print(f"Found {len(site_map.urls)} URLs")
 ```
 
 ## Error Handling
 
-The SDK uses the standard `requests` library and will raise `requests.exceptions.RequestException` for API-related errors:
+The SDK uses the standard `requests` library and will raise `requests.exceptions.HTTPError` for API-related errors. The error object contains structured error information:
 
 ```python
-from requests.exceptions import RequestException
+from requests.exceptions import HTTPError
 
 try:
     transcript = supadata.youtube.transcript(video_id="INVALID_ID")
-except RequestException as error:
-    print(f"API request failed: {error}")
-    if error.response is not None:
-        error_data = error.response.json()
-        print(f"Error code: {error_data.get('code')}")
-        print(f"Error title: {error_data.get('title')}")
-        print(f"Error description: {error_data.get('description')}")
+except HTTPError as error:
+    error_data = error.args[0]  # This is an Error object
+    print(f"Error code: {error_data.code}")
+    print(f"Error title: {error_data.title}")
+    print(f"Error description: {error_data.description}")
+    if error_data.documentation_url:
+        print(f"Documentation: {error_data.documentation_url}")
 ```
 
 ## API Reference

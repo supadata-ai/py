@@ -34,9 +34,14 @@ class YouTube:
         })
 
         # Convert chunks if present
-        if not text and isinstance(response["content"], list):
+        if not text and isinstance(response.get("content"), list):
             response["content"] = [
-                TranscriptChunk(**chunk) for chunk in response["content"]
+                TranscriptChunk(
+                    text=chunk.get("text", ""),
+                    offset=chunk.get("offset", 0),
+                    duration=chunk.get("duration", 0),
+                    lang=chunk.get("lang", "")
+                ) for chunk in response["content"]
             ]
 
         return Transcript(**response)
@@ -67,9 +72,14 @@ class YouTube:
         })
 
         # Convert chunks if present
-        if not text and isinstance(response["content"], list):
+        if not text and isinstance(response.get("content"), list):
             response["content"] = [
-                TranscriptChunk(**chunk) for chunk in response["content"]
+                TranscriptChunk(
+                    text=chunk.get("text", ""),
+                    offset=chunk.get("offset", 0),
+                    duration=chunk.get("duration", 0),
+                    lang=chunk.get("lang", "")
+                ) for chunk in response["content"]
             ]
 
         return TranslatedTranscript(**response) 

@@ -6,6 +6,7 @@ import requests
 from .youtube import YouTube
 from .web import Web
 from .types import Error
+from .errors import SupadataError, map_gateway_error
 
 
 class Supadata:
@@ -54,6 +55,7 @@ class Supadata:
             dict: Parsed JSON response
 
         Raises:
+            SupadataError: If the API request fails with a gateway error
             requests.exceptions.RequestException: If the API request fails
         """
         url = f"{self.base_url}{path}"
@@ -63,18 +65,41 @@ class Supadata:
         if response.status_code == 206 and ('/transcript' in path):
             error_data = self._camel_to_snake(response.json())
             if 'error' in error_data:
-                raise requests.exceptions.HTTPError(error_data['error'])
-            raise requests.exceptions.HTTPError("No transcript available")
+                raise SupadataError(
+                    code=error_data['error'].get('code', 'unknown'),
+                    title=error_data['error'].get('title', 'Unknown Error'),
+                    description=error_data['error'].get('description', str(error_data['error'])),
+                    documentation_url=error_data['error'].get('documentation_url')
+                )
+            raise SupadataError(
+                code='transcript-unavailable',
+                title='Transcript Unavailable',
+                description='No transcript available for this video'
+            )
 
-        try:
-            response.raise_for_status()
-            return self._camel_to_snake(response.json())
-        except requests.exceptions.HTTPError as e:
-            if e.response is not None:
-                try:
-                    error_data = self._camel_to_snake(e.response.json())
-                    error = Error(**error_data)
-                    raise requests.exceptions.HTTPError(error) from e
-                except (ValueError, TypeError):
-                    pass
-            raise 
+        # Handle error responses
+        if 400 <= response.status_code < 600:
+            try:
+                # Try to parse as JSON first
+                error_data = self._camel_to_snake(response.json())
+                if isinstance(error_data, dict):
+                    if 'error' in error_data:
+                        error = error_data['error']
+                        raise SupadataError(
+                            code=error.get('code', 'unknown'),
+                            title=error.get('title', 'Unknown Error'),
+                            description=error.get('description', str(error)),
+                            documentation_url=error.get('documentation_url')
+                        )
+                    raise SupadataError(
+                        code='unknown',
+                        title='Unknown Error',
+                        description=str(error_data)
+                    )
+            except ValueError:
+                # If not JSON, treat as gateway error
+                if response.status_code in (403, 404, 429):
+                    raise map_gateway_error(response.status_code, response.text)
+                response.raise_for_status()
+
+        return self._camel_to_snake(response.json()) 

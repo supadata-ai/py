@@ -12,6 +12,8 @@ from supadata import (
     Scrape,
     Map,
     Error,
+    CrawlJob,
+    CrawlPage,
 )
 
 
@@ -177,4 +179,84 @@ def test_error_handling(client: Supadata, requests_mock) -> None:
     assert error.code == error_response["code"]
     assert error.title == error_response["title"]
     assert error.description == error_response["description"]
-    assert error.documentation_url == error_response["documentationUrl"] 
+    assert error.documentation_url == error_response["documentationUrl"]
+
+
+def test_start_crawl(client: Supadata, requests_mock) -> None:
+    """Test starting a crawl job."""
+    url = "https://test.com"
+    mock_response = {
+        "jobId": "test-job-123"
+    }
+    requests_mock.post(
+        f"{client.base_url}/web/crawl",
+        json=mock_response
+    )
+
+    job = client.web.crawl(url=url, limit=100)
+    assert isinstance(job, CrawlJob)
+    assert job.job_id == "test-job-123"
+
+
+def test_get_crawl_results(client: Supadata, requests_mock) -> None:
+    """Test getting crawl results with pagination."""
+    job_id = "test-job-123"
+    
+    # First page response
+    mock_response1 = {
+        "status": "completed",
+        "pages": [
+            {
+                "url": "https://test.com",
+                "content": "# Page 1",
+                "name": "Test Page 1",
+                "description": "First test page"
+            }
+        ],
+        "next": "page2"
+    }
+    
+    # Second page response
+    mock_response2 = {
+        "status": "completed",
+        "pages": [
+            {
+                "url": "https://test.com/2",
+                "content": "# Page 2",
+                "name": "Test Page 2",
+                "description": "Second test page"
+            }
+        ],
+        "next": None
+    }
+
+    requests_mock.get(
+        f"{client.base_url}/web/crawl/{job_id}",
+        [
+            {'json': mock_response1},
+            {'json': mock_response2}
+        ]
+    )
+
+    pages = client.web.get_crawl_results(job_id=job_id)
+    assert len(pages) == 2
+    assert isinstance(pages[0], CrawlPage)
+    assert pages[0].name == "Test Page 1"
+    assert pages[1].name == "Test Page 2"
+
+
+def test_get_crawl_results_failed(client: Supadata, requests_mock) -> None:
+    """Test getting crawl results for a failed job."""
+    job_id = "test-job-123"
+    mock_response = {
+        "status": "failed",
+        "pages": None,
+        "next": None
+    }
+    requests_mock.get(
+        f"{client.base_url}/web/crawl/{job_id}",
+        json=mock_response
+    )
+
+    with pytest.raises(Exception, match="Crawl job failed"):
+        client.web.get_crawl_results(job_id=job_id) 

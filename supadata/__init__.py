@@ -10,6 +10,9 @@ from supadata.types import (
     TranslatedTranscript,
     TranscriptChunk,
     Scrape,
+    CrawlJob,
+    CrawlPage,
+    CrawlResponse,
     Map,
     Error,
 )

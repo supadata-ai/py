@@ -93,3 +93,43 @@ class Error:
     description: str
     documentation_url: Optional[str]
 
+
+@dataclass
+class CrawlPage:
+    """A page from a crawl job.
+    
+    Attributes:
+        url: The URL that was scraped
+        content: The markdown content extracted from the URL
+        name: The title of the webpage
+        description: A description of the webpage
+    """
+    url: str
+    content: str
+    name: str
+    description: str
+
+
+@dataclass
+class CrawlResponse:
+    """Response from a crawl job.
+    
+    Attributes:
+        status: The status of the crawl job
+        pages: List of crawled pages (only when completed)
+        next: URL for the next page of results
+    """
+    status: str  # 'scraping', 'completed', 'failed' or 'cancelled'
+    pages: Optional[List[dict]] = None
+    next: Optional[str] = None
+
+
+@dataclass
+class CrawlJob:
+    """A new crawl job.
+    
+    Attributes:
+        job_id: The ID of the crawl job
+    """
+    job_id: str
+

@@ -15,11 +15,12 @@ class YouTube:
         """
         self._request = request_handler
 
-    def transcript(self, video_id: str, text: bool = False) -> Transcript:
+    def transcript(self, video_id: str, lang: str = None, text: bool = False) -> Transcript:
         """Get transcript for a YouTube video.
 
         Args:
             video_id: YouTube video ID
+            lang: Language code for preferred transcript language (e.g., 'es' for Spanish)
             text: Whether to return plain text instead of segments
 
         Returns:
@@ -28,10 +29,15 @@ class YouTube:
         Raises:
             requests.exceptions.RequestException: If the API request fails
         """
-        response = self._request("GET", "/youtube/transcript", params={
+        params = {
             "videoId": video_id,
-            "text": text
-        })
+            "text": str(text).lower()
+        }
+        
+        if lang:
+            params["lang"] = lang
+
+        response = self._request("GET", "/youtube/transcript", params=params)
 
         # Convert chunks if present
         if not text and isinstance(response.get("content"), list):
@@ -68,7 +74,7 @@ class YouTube:
         response = self._request("GET", "/youtube/transcript/translate", params={
             "videoId": video_id,
             "lang": lang,
-            "text": text
+            "text": str(text).lower()
         })
 
         # Convert chunks if present

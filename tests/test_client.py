@@ -13,7 +13,6 @@ from supadata import (
     Map,
     Error,
 )
-from supadata.errors import SupadataError
 
 
 @pytest.fixture
@@ -159,12 +158,10 @@ def test_error_handling(client: Supadata, requests_mock) -> None:
     """Test error handling."""
     video_id = "invalid"
     error_response = {
-        "error": {
-            "code": "video-not-found",
-            "title": "Video Not Found",
-            "description": "The specified video was not found",
-            "documentationUrl": "https://docs.test.com/errors#video-not-found"
-        }
+        "code": "video-not-found",
+        "title": "Video Not Found",
+        "description": "The specified video was not found",
+        "documentationUrl": "https://docs.test.com/errors#video-not-found"
     }
     requests_mock.get(
         f"{client.base_url}/youtube/transcript",
@@ -172,62 +169,12 @@ def test_error_handling(client: Supadata, requests_mock) -> None:
         json=error_response
     )
 
-    with pytest.raises(SupadataError) as exc_info:
+    with pytest.raises(requests.exceptions.HTTPError) as exc_info:
         client.youtube.transcript(video_id=video_id)
 
-    error = exc_info.value
-    assert error.code == error_response["error"]["code"]
-    assert error.title == error_response["error"]["title"]
-    assert error.description == error_response["error"]["description"]
-    assert error.documentation_url == error_response["error"]["documentationUrl"]
-
-
-def test_gateway_error_403(client: Supadata, requests_mock) -> None:
-    """Test handling of 403 gateway error."""
-    requests_mock.get(
-        f"{client.base_url}/youtube/transcript",
-        status_code=403,
-        text="Invalid API key provided"
-    )
-
-    with pytest.raises(SupadataError) as exc_info:
-        client.youtube.transcript(video_id="test123")
-
-    error = exc_info.value
-    assert error.code == "invalid-request"
-    assert error.title == "Invalid or missing API key"
-    assert error.description == "Invalid API key provided"
-
-
-def test_gateway_error_404(client: Supadata, requests_mock) -> None:
-    """Test handling of 404 gateway error."""
-    requests_mock.get(
-        f"{client.base_url}/invalid/endpoint",
-        status_code=404,
-        text="Not Found"
-    )
-
-    with pytest.raises(SupadataError) as exc_info:
-        client._request("GET", "/invalid/endpoint")
-
-    error = exc_info.value
-    assert error.code == "invalid-request"
-    assert error.title == "Endpoint does not exist"
-    assert error.description == "Not Found"
-
-
-def test_gateway_error_429(client: Supadata, requests_mock) -> None:
-    """Test handling of 429 rate limit error."""
-    requests_mock.get(
-        f"{client.base_url}/youtube/transcript",
-        status_code=429,
-        text="Rate limit exceeded"
-    )
-
-    with pytest.raises(SupadataError) as exc_info:
-        client.youtube.transcript(video_id="test123")
-
-    error = exc_info.value
-    assert error.code == "limit-exceeded"
-    assert error.title == "Limit exceeded"
-    assert error.description == "Rate limit exceeded" 
+    error = exc_info.value.args[0]
+    assert isinstance(error, Error)
+    assert error.code == error_response["code"]
+    assert error.title == error_response["title"]
+    assert error.description == error_response["description"]
+    assert error.documentation_url == error_response["documentationUrl"] 

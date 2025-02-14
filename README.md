@@ -21,8 +21,8 @@ from supadata import Supadata
 # Initialize the client
 supadata = Supadata(api_key="YOUR_API_KEY")
 
-# Get YouTube transcript
-transcript = supadata.youtube.transcript(video_id="VIDEO_ID")
+# Get YouTube transcript with Spanish language preference
+transcript = supadata.youtube.transcript(video_id="VIDEO_ID", lang="es")
 print(f"Got transcript {transcript.content}")
 
 # Translate YouTube transcript to Spanish

@@ -42,23 +42,31 @@ class Supadata:
         Raises:
             SupadataError: With appropriate error details
         """
+
+        try:
+            import json
+            error_json = json.loads(error_text)
+            error_message = error_json.get('message', '')
+        except (ValueError, AttributeError):
+            error_message = ''
+
         if status_code == 403:
             raise SupadataError(
-                code="invalid-request",
-                title="Invalid or missing API key",
-                description=error_text or "Please ensure you have provided a valid API key"
+                error="invalid-request",
+                message="Invalid or missing API key",
+                details=error_message or "Please ensure you have provided a valid API key"
             )
         elif status_code == 404:
             raise SupadataError(
-                code="invalid-request",
-                title="Endpoint does not exist",
-                description=error_text or "The API endpoint you are trying to access does not exist"
+                error="invalid-request",
+                message="Endpoint does not exist",
+                details=error_message or "The API endpoint you are trying to access does not exist"
             )
         elif status_code == 429:
             raise SupadataError(
-                code="limit-exceeded",
-                title="Limit exceeded",
-                description=error_text or "You have exceeded the allowed request rate or quota limits"
+                error="limit-exceeded",
+                message="Limit exceeded",
+                details=error_message or "You have exceeded the allowed request rate or quota limits"
             )
 
     def _camel_to_snake(self, d: Dict[str, Any]) -> Dict[str, Any]:

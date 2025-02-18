@@ -9,23 +9,23 @@ class SupadataError(Exception):
     """Base exception for all Supadata errors.
     
     Attributes:
-        code: Error code identifying the type of error (e.g., 'video-not-found')
-        title: Human readable error title
-        description: Detailed error description
+        error: Error code identifying the type of error (e.g., 'video-not-found')
+        message: Human readable error title
+        details: Detailed error description
         documentation_url: URL to error documentation
     """
-    code: str
-    title: str
-    description: str
+    error: str
+    message: str
+    details: str
     documentation_url: Optional[str] = None
 
     def __str__(self) -> str:
         """Return string representation of the error."""
-        parts = [self.description]
-        if self.code:
-            parts.append(f"Code: {self.code}")
-        if self.title:
-            parts.append(f"Title: {self.title}")
+        parts = [self.message]
+        if self.error:
+            parts.append(f"error: {self.error}")
+        if self.details:
+            parts.append(f"details: {self.details}")
         if self.documentation_url:
-            parts.append(f"Documentation: {self.documentation_url}")
+            parts.append(f"documentationUrl: {self.documentation_url}")
         return " | ".join(parts) 

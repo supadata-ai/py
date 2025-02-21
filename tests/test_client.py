@@ -11,9 +11,8 @@ from supadata import (
     TranscriptChunk,
     Scrape,
     Map,
-    Error,
     CrawlJob,
-    CrawlPage,
+    CrawlPage
 )
 
 from supadata.errors import SupadataError
@@ -162,9 +161,9 @@ def test_error_handling(client: Supadata, requests_mock) -> None:
     """Test error handling for JSON API errors."""
     video_id = "invalid"
     error_response = {
-        "code": "video-not-found",
-        "title": "Video Not Found",
-        "description": "The specified video was not found",
+        "error": "video-not-found",
+        "message": "Video Not Found",
+        "details": "The specified video was not found",
         "documentationUrl": "https://docs.test.com/errors#video-not-found"
     }
     requests_mock.get(
@@ -178,9 +177,9 @@ def test_error_handling(client: Supadata, requests_mock) -> None:
         client.youtube.transcript(video_id=video_id)
 
     error = exc_info.value
-    assert error.code == error_response["code"]
-    assert error.title == error_response["title"]
-    assert error.description == error_response["description"]
+    assert error.error == error_response["error"]
+    assert error.message == error_response["message"]
+    assert error.details == error_response["details"]
     assert error.documentation_url == error_response["documentationUrl"]
 
 
@@ -269,16 +268,16 @@ def test_gateway_error_403(client: Supadata, requests_mock) -> None:
     requests_mock.get(
         f'{client.base_url}/youtube/transcript',
         status_code=403,
-        text='Invalid API key provided'
+        text='Please ensure you have provided a valid API key'
     )
 
     with pytest.raises(SupadataError) as exc_info:
         client.youtube.transcript(video_id='test123')
     
     error = exc_info.value
-    assert error.code == 'invalid-request'
-    assert error.title == 'Invalid or missing API key'
-    assert error.description == 'Invalid API key provided'
+    assert error.error == 'invalid-request'
+    assert error.message == 'Invalid or missing API key'
+    assert error.details == 'Please ensure you have provided a valid API key'
 
 
 def test_gateway_error_404(client: Supadata, requests_mock) -> None:
@@ -286,16 +285,16 @@ def test_gateway_error_404(client: Supadata, requests_mock) -> None:
     requests_mock.get(
         f'{client.base_url}/invalid/endpoint',
         status_code=404,
-        text='Endpoint not found'
+        text='The API endpoint you are trying to access does not exist'
     )
 
     with pytest.raises(SupadataError) as exc_info:
         client._request('GET', '/invalid/endpoint')
     
     error = exc_info.value
-    assert error.code == 'invalid-request'
-    assert error.title == 'Endpoint does not exist'
-    assert error.description == 'Endpoint not found'
+    assert error.error == 'invalid-request'
+    assert error.message == 'Endpoint does not exist'
+    assert error.details == 'The API endpoint you are trying to access does not exist'
 
 
 def test_gateway_error_429(client: Supadata, requests_mock) -> None:
@@ -303,13 +302,13 @@ def test_gateway_error_429(client: Supadata, requests_mock) -> None:
     requests_mock.get(
         f'{client.base_url}/youtube/transcript',
         status_code=429,
-        text='Rate limit exceeded'
+        text='You have exceeded the allowed request rate or quota limits'
     )
 
     with pytest.raises(SupadataError) as exc_info:
         client.youtube.transcript(video_id='test123')
     
     error = exc_info.value
-    assert error.code == 'limit-exceeded'
-    assert error.title == 'Limit exceeded'
-    assert error.description == 'Rate limit exceeded' 
+    assert error.error == 'limit-exceeded'
+    assert error.message == 'Limit exceeded'
+    assert error.details == 'You have exceeded the allowed request rate or quota limits' 

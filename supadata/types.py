@@ -77,23 +77,6 @@ class Map:
     """
     urls: List[str]
 
-
-@dataclass
-class Error:
-    """Standard error response format.
-    
-    Attributes:
-        code: Error code identifying the type of error
-        title: Human readable error title
-        description: Detailed error description
-        documentation_url: URL to error documentation
-    """
-    code: str
-    title: str
-    description: str
-    documentation_url: Optional[str]
-
-
 @dataclass
 class CrawlPage:
     """A page from a crawl job.
@@ -120,7 +103,7 @@ class CrawlResponse:
         next: URL for the next page of results
     """
     status: str  # 'scraping', 'completed', 'failed' or 'cancelled'
-    pages: Optional[List[dict]] = None
+    pages: Optional[List[CrawlPage]] = None
     next: Optional[str] = None
 
 

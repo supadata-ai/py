@@ -16,7 +16,7 @@ pip install supadata
 ## Usage
 
 ```python
-from supadata import Supadata
+from supadata import Supadata, SupadataError
 
 # Initialize the client
 supadata = Supadata(api_key="YOUR_API_KEY")
@@ -47,24 +47,41 @@ print(f"Page content: {web_content.content}")
 # Map website URLs
 site_map = supadata.web.map("https://supadata.ai")
 print(f"Found {len(site_map.urls)} URLs")
+
+# Start a crawl job
+crawl_job = supadata.web.crawl(
+    url="https://supadata.ai",
+    limit=100  # Optional: limit the number of pages to crawl
+)
+print(f"Started crawl job: {crawl_job.job_id}")
+
+# Get crawl results
+# This automatically handles pagination and returns all pages
+try:
+    pages = supadata.web.get_crawl_results(job_id=crawl_job.job_id)
+    for page in pages:
+        print(f"Crawled page: {page.url}")
+        print(f"Page title: {page.name}")
+        print(f"Content: {page.content}")
+except SupadataError as e:
+    print(f"Crawl job failed: {e}")
 ```
 
 ## Error Handling
 
-The SDK uses the standard `requests` library and will raise `requests.exceptions.HTTPError` for API-related errors. The error object contains structured error information:
+The SDK uses custom `SupadataError` exceptions that provide structured error information:
 
 ```python
-from requests.exceptions import HTTPError
+from supadata.errors import SupadataError
 
 try:
     transcript = supadata.youtube.transcript(video_id="INVALID_ID")
-except HTTPError as error:
-    error_data = error.args[0]  # This is an Error object
-    print(f"Error code: {error_data.code}")
-    print(f"Error title: {error_data.title}")
-    print(f"Error description: {error_data.description}")
-    if error_data.documentation_url:
-        print(f"Documentation: {error_data.documentation_url}")
+except SupadataError as error:
+    print(f"Error code: {error.error}")
+    print(f"Error message: {error.message}")
+    print(f"Error details: {error.details}")
+    if error.documentation_url:
+        print(f"Documentation: {error.documentation_url}")
 ```
 
 ## API Reference

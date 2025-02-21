@@ -1,7 +1,8 @@
 """Web-related operations for Supadata."""
 
 from .types import Scrape, Map, CrawlJob, CrawlResponse, CrawlPage
-from typing import Optional, List
+from .errors import SupadataError
+from typing import Optional, List, Dict, Union
 
 
 class Web:
@@ -25,7 +26,7 @@ class Web:
             Scrape object containing the extracted content
 
         Raises:
-            requests.exceptions.RequestException: If the API request fails
+            SupadataError: If the API request fails
         """
         response = self._request("GET", "/web/scrape", params={"url": url})
         return Scrape(**response)
@@ -40,7 +41,7 @@ class Web:
             Map object containing discovered URLs
 
         Raises:
-            requests.exceptions.RequestException: If the API request fails
+            SupadataError: If the API request fails
         """
         response = self._request("GET", "/web/map", params={"url": url})
         return Map(**response)
@@ -56,11 +57,11 @@ class Web:
             CrawlJob containing the job ID
 
         Raises:
-            requests.exceptions.RequestException: If the API request fails
+            SupadataError: If the crawl job failed
         """
-        data = {"url": url}
+        data: Dict[str, Union[str, int]] = {"url": url}
         if limit is not None:
-            data["limit"] = limit # type: ignore
+            data["limit"] = limit
             
         response = self._request("POST", "/web/crawl", json=data)
         return CrawlJob(**response)
@@ -77,8 +78,7 @@ class Web:
             List of CrawlPage objects containing the crawled content
 
         Raises:
-            Exception: If the crawl job failed
-            requests.exceptions.RequestException: If the API request fails
+            SupadataError: If the crawl job failed
         """
         all_pages = []
         next_token = None
@@ -93,7 +93,7 @@ class Web:
 
             # Check if the job failed
             if crawl_response.status == "failed":
-                raise Exception("Crawl job failed")
+                raise SupadataError(error="crawl-failed", message="Crawl job failed", details="The crawl job failed to complete")
 
             if crawl_response.pages:
                 # Convert each page dict to a CrawlPage object

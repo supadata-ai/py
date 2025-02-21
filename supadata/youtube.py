@@ -27,7 +27,7 @@ class YouTube:
             Transcript object containing content, language and available languages
 
         Raises:
-            requests.exceptions.RequestException: If the API request fails
+            SupadataError: If the API request fails
         """
         params = {
             "videoId": video_id,
@@ -69,7 +69,7 @@ class YouTube:
             TranslatedTranscript object containing translated content
 
         Raises:
-            requests.exceptions.RequestException: If the API request fails
+            SupadataError: If the API request fails
         """
         response = self._request("GET", "/youtube/transcript/translate", params={
             "videoId": video_id,

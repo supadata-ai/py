@@ -5,16 +5,16 @@ The official Python SDK for Supadata - scrape web and YouTube content with ease.
 """
 from importlib.metadata import version
 from supadata.client import Supadata
+from supadata.errors import SupadataError
 from supadata.types import (
     Transcript,
     TranslatedTranscript,
     TranscriptChunk,
     Scrape,
+    Map,
     CrawlJob,
     CrawlPage,
-    CrawlResponse,
-    Map,
-    Error,
+    CrawlResponse
 )
 
 __version__ = version("supadata")
@@ -25,5 +25,8 @@ __all__ = [
     "TranscriptChunk",
     "Scrape",
     "Map",
-    "Error",
+    "SupadataError",
+    "CrawlJob",
+    "CrawlPage",
+    "CrawlResponse"
 ] 

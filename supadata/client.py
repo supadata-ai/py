@@ -7,7 +7,6 @@ from supadata.errors import SupadataError
 
 from .youtube import YouTube
 from .web import Web
-from .types import Error
 
 
 class Supadata:
@@ -109,7 +108,7 @@ class Supadata:
             error_data = self._camel_to_snake(response.json())
             if 'error' in error_data:
                 raise SupadataError(**error_data['error'])
-            raise SupadataError(code="transcript-unavailable", title="No Transcript", description="No transcript available")
+            raise SupadataError(error="transcript-unavailable", message="No Transcript", details="No transcript available")
 
         try:
             response.raise_for_status()

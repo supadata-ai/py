@@ -12,7 +12,12 @@ from supadata import (
     Scrape,
     Map,
     CrawlJob,
-    CrawlPage
+    CrawlPage,
+    YoutubeVideo,
+    YoutubeChannel,
+    YoutubePlaylist,
+    YoutubeChannelVideos,
+    YoutubePlaylistVideos
 )
 
 from supadata.errors import SupadataError
@@ -311,4 +316,233 @@ def test_gateway_error_429(client: Supadata, requests_mock) -> None:
     error = exc_info.value
     assert error.error == 'limit-exceeded'
     assert error.message == 'Limit exceeded'
-    assert error.details == 'You have exceeded the allowed request rate or quota limits' 
+    assert error.details == 'You have exceeded the allowed request rate or quota limits'
+
+
+def test_get_youtube_video(client: Supadata, requests_mock) -> None:
+    """Test getting YouTube video details."""
+    video_id = "test123"
+    mock_response = {
+        "id": video_id,
+        "title": "Test Video",
+        "description": "This is a test video",
+        "publishedAt": "2023-01-01T00:00:00Z",
+        "channelId": "UC_test_channel",
+        "channelTitle": "Test Channel",
+        "thumbnailUrl": "https://example.com/thumbnail.jpg",
+        "duration": 120,
+        "viewCount": 1000,
+        "likeCount": 100,
+        "commentCount": 50,
+        "tags": ["test", "video"]
+    }
+    requests_mock.get(
+        f"{client.base_url}/youtube/video?videoId={video_id}",
+        json=mock_response,
+        status_code=200
+    )
+
+    result = client.youtube.video(video_id=video_id)
+    assert isinstance(result, YoutubeVideo)
+    assert result.id == video_id
+    assert result.title == "Test Video"
+    assert result.description == "This is a test video"
+    assert result.published_at == "2023-01-01T00:00:00Z"
+    assert result.channel_id == "UC_test_channel"
+    assert result.channel_title == "Test Channel"
+    assert result.thumbnail_url == "https://example.com/thumbnail.jpg"
+    assert result.duration == 120
+    assert result.view_count == 1000
+    assert result.like_count == 100
+    assert result.comment_count == 50
+    assert result.tags == ["test", "video"]
+
+
+def test_get_youtube_channel(client: Supadata, requests_mock) -> None:
+    """Test getting YouTube channel details."""
+    channel_id = "UC_test_channel"
+    mock_response = {
+        "id": channel_id,
+        "title": "Test Channel",
+        "description": "This is a test channel",
+        "customUrl": "test_channel",
+        "publishedAt": "2023-01-01T00:00:00Z",
+        "thumbnailUrl": "https://example.com/channel_thumbnail.jpg",
+        "subscriberCount": 10000,
+        "videoCount": 50,
+        "viewCount": 500000
+    }
+    requests_mock.get(
+        f"{client.base_url}/youtube/channel?channelId={channel_id}",
+        json=mock_response,
+        status_code=200
+    )
+
+    result = client.youtube.channel(channel_id=channel_id)
+    assert isinstance(result, YoutubeChannel)
+    assert result.id == channel_id
+    assert result.title == "Test Channel"
+    assert result.description == "This is a test channel"
+    assert result.custom_url == "test_channel"
+    assert result.published_at == "2023-01-01T00:00:00Z"
+    assert result.thumbnail_url == "https://example.com/channel_thumbnail.jpg"
+    assert result.subscriber_count == 10000
+    assert result.video_count == 50
+    assert result.view_count == 500000
+
+
+def test_get_youtube_playlist(client: Supadata, requests_mock) -> None:
+    """Test getting YouTube playlist details."""
+    playlist_id = "PL_test_playlist"
+    mock_response = {
+        "id": playlist_id,
+        "title": "Test Playlist",
+        "description": "This is a test playlist",
+        "publishedAt": "2023-01-01T00:00:00Z",
+        "channelId": "UC_test_channel",
+        "channelTitle": "Test Channel",
+        "thumbnailUrl": "https://example.com/playlist_thumbnail.jpg",
+        "itemCount": 10
+    }
+    requests_mock.get(
+        f"{client.base_url}/youtube/playlist?playlistId={playlist_id}",
+        json=mock_response,
+        status_code=200
+    )
+
+    result = client.youtube.playlist(playlist_id=playlist_id)
+    assert isinstance(result, YoutubePlaylist)
+    assert result.id == playlist_id
+    assert result.title == "Test Playlist"
+    assert result.description == "This is a test playlist"
+    assert result.published_at == "2023-01-01T00:00:00Z"
+    assert result.channel_id == "UC_test_channel"
+    assert result.channel_title == "Test Channel"
+    assert result.thumbnail_url == "https://example.com/playlist_thumbnail.jpg"
+    assert result.item_count == 10
+
+
+def test_get_youtube_channel_videos(client: Supadata, requests_mock) -> None:
+    """Test getting videos from a YouTube channel."""
+    channel_id = "UC_test_channel"
+    mock_response = {
+        "channel_id": channel_id,
+        "channel_title": "Test Channel",
+        "videos": [
+            {
+                "id": "video1",
+                "title": "Test Video 1",
+                "description": "This is test video 1",
+                "publishedAt": "2023-01-01T00:00:00Z",
+                "channelId": channel_id,
+                "channelTitle": "Test Channel",
+                "thumbnailUrl": "https://example.com/thumbnail1.jpg",
+                "duration": 120,
+                "viewCount": 1000
+            },
+            {
+                "id": "video2",
+                "title": "Test Video 2",
+                "description": "This is test video 2",
+                "publishedAt": "2023-01-02T00:00:00Z",
+                "channelId": channel_id,
+                "channelTitle": "Test Channel",
+                "thumbnailUrl": "https://example.com/thumbnail2.jpg",
+                "duration": 180,
+                "viewCount": 2000
+            }
+        ]
+    }
+    requests_mock.get(
+        f"{client.base_url}/youtube/channel/videos?channelId={channel_id}&maxResults=50",
+        json=mock_response,
+        status_code=200
+    )
+
+    result = client.youtube.channel_videos(channel_id=channel_id)
+    assert isinstance(result, YoutubeChannelVideos)
+    assert result.channel_id == channel_id
+    assert result.channel_title == "Test Channel"
+    assert len(result.videos) == 2
+    assert isinstance(result.videos[0], YoutubeVideo)
+    assert result.videos[0].id == "video1"
+    assert result.videos[0].title == "Test Video 1"
+    assert result.videos[1].id == "video2"
+    assert result.videos[1].title == "Test Video 2"
+
+    # Test with additional parameters
+    requests_mock.get(
+        f"{client.base_url}/youtube/channel/videos?channelId={channel_id}&maxResults=10&publishedAfter=2023-01-01T00:00:00Z&publishedBefore=2023-01-31T23:59:59Z",
+        json=mock_response,
+        status_code=200
+    )
+
+    result = client.youtube.channel_videos(
+        channel_id=channel_id,
+        max_results=10,
+        published_after="2023-01-01T00:00:00Z",
+        published_before="2023-01-31T23:59:59Z"
+    )
+    assert isinstance(result, YoutubeChannelVideos)
+
+
+def test_get_youtube_playlist_videos(client: Supadata, requests_mock) -> None:
+    """Test getting videos from a YouTube playlist."""
+    playlist_id = "PL_test_playlist"
+    mock_response = {
+        "playlist_id": playlist_id,
+        "playlist_title": "Test Playlist",
+        "videos": [
+            {
+                "id": "video1",
+                "title": "Test Video 1",
+                "description": "This is test video 1",
+                "publishedAt": "2023-01-01T00:00:00Z",
+                "channelId": "UC_test_channel",
+                "channelTitle": "Test Channel",
+                "thumbnailUrl": "https://example.com/thumbnail1.jpg",
+                "duration": 120,
+                "viewCount": 1000
+            },
+            {
+                "id": "video2",
+                "title": "Test Video 2",
+                "description": "This is test video 2",
+                "publishedAt": "2023-01-02T00:00:00Z",
+                "channelId": "UC_test_channel",
+                "channelTitle": "Test Channel",
+                "thumbnailUrl": "https://example.com/thumbnail2.jpg",
+                "duration": 180,
+                "viewCount": 2000
+            }
+        ]
+    }
+    requests_mock.get(
+        f"{client.base_url}/youtube/playlist/videos?playlistId={playlist_id}&maxResults=50",
+        json=mock_response,
+        status_code=200
+    )
+
+    result = client.youtube.playlist_videos(playlist_id=playlist_id)
+    assert isinstance(result, YoutubePlaylistVideos)
+    assert result.playlist_id == playlist_id
+    assert result.playlist_title == "Test Playlist"
+    assert len(result.videos) == 2
+    assert isinstance(result.videos[0], YoutubeVideo)
+    assert result.videos[0].id == "video1"
+    assert result.videos[0].title == "Test Video 1"
+    assert result.videos[1].id == "video2"
+    assert result.videos[1].title == "Test Video 2"
+
+    # Test with max_results parameter
+    requests_mock.get(
+        f"{client.base_url}/youtube/playlist/videos?playlistId={playlist_id}&maxResults=10",
+        json=mock_response,
+        status_code=200
+    )
+
+    result = client.youtube.playlist_videos(
+        playlist_id=playlist_id,
+        max_results=10
+    )
+    assert isinstance(result, YoutubePlaylistVideos) 

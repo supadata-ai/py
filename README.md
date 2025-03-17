@@ -44,6 +44,43 @@ web_content = supadata.web.scrape("https://supadata.ai")
 print(f"Page title: {web_content.name}")
 print(f"Page content: {web_content.content}")
 
+# Get YouTube video details
+video = supadata.youtube.video(video_id="VIDEO_ID")
+print(f"Video title: {video.title}")
+print(f"Channel: {video.channel_title}")
+print(f"Views: {video.view_count}")
+
+# Get YouTube channel details
+channel = supadata.youtube.channel(channel_id="CHANNEL_ID")
+print(f"Channel: {channel.title}")
+print(f"Subscribers: {channel.subscriber_count}")
+print(f"Videos: {channel.video_count}")
+
+# Get YouTube playlist details
+playlist = supadata.youtube.playlist(playlist_id="PLAYLIST_ID")
+print(f"Playlist: {playlist.title}")
+print(f"Videos count: {playlist.item_count}")
+
+# Get videos from a YouTube channel
+channel_videos = supadata.youtube.channel_videos(
+    channel_id="CHANNEL_ID",
+    max_results=10,  # Optional: limit the number of videos
+    published_after="2023-01-01T00:00:00Z",  # Optional: filter by publish date
+    published_before="2023-12-31T23:59:59Z"  # Optional: filter by publish date
+)
+print(f"Channel: {channel_videos.channel_title}")
+for video in channel_videos.videos:
+    print(f"Video: {video.title}, Views: {video.view_count}")
+
+# Get videos from a YouTube playlist
+playlist_videos = supadata.youtube.playlist_videos(
+    playlist_id="PLAYLIST_ID",
+    max_results=10  # Optional: limit the number of videos
+)
+print(f"Playlist: {playlist_videos.playlist_title}")
+for video in playlist_videos.videos:
+    print(f"Video: {video.title}, Views: {video.view_count}")
+
 # Map website URLs
 site_map = supadata.web.map("https://supadata.ai")
 print(f"Found {len(site_map.urls)} URLs")

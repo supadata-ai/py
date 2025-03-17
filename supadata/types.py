@@ -116,3 +116,113 @@ class CrawlJob:
     """
     job_id: str
 
+
+@dataclass
+class YoutubeVideo:
+    """YouTube video details.
+    
+    Attributes:
+        id: YouTube video ID
+        title: Video title
+        description: Video description
+        published_at: Timestamp when the video was published
+        channel_id: ID of the channel that uploaded the video
+        channel_title: Title of the channel that uploaded the video
+        thumbnail_url: URL of the video thumbnail
+        duration: Duration of video in seconds
+        view_count: Number of views
+        like_count: Number of likes
+        comment_count: Number of comments
+        tags: List of video tags
+    """
+    id: str
+    title: str
+    description: str
+    published_at: str
+    channel_id: str
+    channel_title: str
+    thumbnail_url: str
+    duration: int
+    view_count: int
+    like_count: Optional[int] = None
+    comment_count: Optional[int] = None
+    tags: Optional[List[str]] = None
+
+
+@dataclass
+class YoutubeChannel:
+    """YouTube channel details.
+    
+    Attributes:
+        id: YouTube channel ID
+        title: Channel title
+        description: Channel description
+        custom_url: Custom URL of the channel
+        published_at: Timestamp when the channel was created
+        thumbnail_url: URL of the channel thumbnail
+        subscriber_count: Number of subscribers
+        video_count: Number of videos
+        view_count: Number of views
+    """
+    id: str
+    title: str
+    description: str
+    custom_url: Optional[str]
+    published_at: str
+    thumbnail_url: str
+    subscriber_count: Optional[int] = None
+    video_count: int = 0
+    view_count: int = 0
+
+
+@dataclass
+class YoutubePlaylist:
+    """YouTube playlist details.
+    
+    Attributes:
+        id: YouTube playlist ID
+        title: Playlist title
+        description: Playlist description
+        published_at: Timestamp when the playlist was created
+        channel_id: ID of the channel that created the playlist
+        channel_title: Title of the channel that created the playlist
+        thumbnail_url: URL of the playlist thumbnail
+        item_count: Number of videos in the playlist
+    """
+    id: str
+    title: str
+    description: str
+    published_at: str
+    channel_id: str
+    channel_title: str
+    thumbnail_url: str
+    item_count: int
+
+
+@dataclass
+class YoutubeChannelVideos:
+    """Videos from a YouTube channel.
+    
+    Attributes:
+        channel_id: YouTube channel ID
+        channel_title: Title of the channel
+        videos: List of videos from the channel
+    """
+    channel_id: str
+    channel_title: str
+    videos: List[YoutubeVideo]
+
+
+@dataclass
+class YoutubePlaylistVideos:
+    """Videos from a YouTube playlist.
+    
+    Attributes:
+        playlist_id: YouTube playlist ID
+        playlist_title: Title of the playlist
+        videos: List of videos from the playlist
+    """
+    playlist_id: str
+    playlist_title: str
+    videos: List[YoutubeVideo]
+

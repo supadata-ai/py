@@ -1,7 +1,7 @@
 """YouTube-related operations for Supadata."""
 
-from typing import Dict, Any
-from .types import Transcript, TranslatedTranscript, TranscriptChunk
+from typing import Dict, Any, Optional, List, Union
+from .types import Transcript, TranslatedTranscript, TranscriptChunk, YoutubeVideo, YoutubeChannel, YoutubePlaylist, YoutubeChannelVideos, YoutubePlaylistVideos
 
 
 class YouTube:
@@ -88,4 +88,131 @@ class YouTube:
                 ) for chunk in response["content"]
             ]
 
-        return TranslatedTranscript(**response) 
+        return TranslatedTranscript(**response)
+
+    def video(self, video_id: str) -> YoutubeVideo:
+        """Get details about a YouTube video.
+
+        Args:
+            video_id: YouTube video ID
+
+        Returns:
+            YoutubeVideo object containing video details
+
+        Raises:
+            SupadataError: If the API request fails
+        """
+        response = self._request("GET", "/youtube/video", params={
+            "videoId": video_id
+        })
+        return YoutubeVideo(**response)
+
+    def channel(self, channel_id: str) -> YoutubeChannel:
+        """Get details about a YouTube channel.
+
+        Args:
+            channel_id: YouTube channel ID
+
+        Returns:
+            YoutubeChannel object containing channel details
+
+        Raises:
+            SupadataError: If the API request fails
+        """
+        response = self._request("GET", "/youtube/channel", params={
+            "channelId": channel_id
+        })
+        return YoutubeChannel(**response)
+
+    def playlist(self, playlist_id: str) -> YoutubePlaylist:
+        """Get details about a YouTube playlist.
+
+        Args:
+            playlist_id: YouTube playlist ID
+
+        Returns:
+            YoutubePlaylist object containing playlist details
+
+        Raises:
+            SupadataError: If the API request fails
+        """
+        response = self._request("GET", "/youtube/playlist", params={
+            "playlistId": playlist_id
+        })
+        return YoutubePlaylist(**response)
+
+    def channel_videos(
+        self,
+        channel_id: str,
+        max_results: int = 50,
+        published_after: str = None,
+        published_before: str = None
+    ) -> YoutubeChannelVideos:
+        """Get videos from a YouTube channel.
+
+        Args:
+            channel_id: YouTube channel ID
+            max_results: Maximum number of videos to return (default: 50, max: 100)
+            published_after: Filter videos published after this date (ISO 8601, e.g., '2023-01-01T00:00:00Z')
+            published_before: Filter videos published before this date (ISO 8601, e.g., '2023-12-31T23:59:59Z')
+
+        Returns:
+            YoutubeChannelVideos object containing channel information and list of videos
+
+        Raises:
+            SupadataError: If the API request fails
+        """
+        params = {
+            "channelId": channel_id,
+            "maxResults": max_results
+        }
+
+        if published_after:
+            params["publishedAfter"] = published_after
+        
+        if published_before:
+            params["publishedBefore"] = published_before
+
+        response = self._request("GET", "/youtube/channel/videos", params=params)
+        
+        # Convert video list to YoutubeVideo objects
+        videos = [YoutubeVideo(**video) for video in response.get("videos", [])]
+        
+        return YoutubeChannelVideos(
+            channel_id=response.get("channel_id", ""),
+            channel_title=response.get("channel_title", ""),
+            videos=videos
+        )
+
+    def playlist_videos(
+        self,
+        playlist_id: str,
+        max_results: int = 50
+    ) -> YoutubePlaylistVideos:
+        """Get videos from a YouTube playlist.
+
+        Args:
+            playlist_id: YouTube playlist ID
+            max_results: Maximum number of videos to return (default: 50, max: 100)
+
+        Returns:
+            YoutubePlaylistVideos object containing playlist information and list of videos
+
+        Raises:
+            SupadataError: If the API request fails
+        """
+        params = {
+            "playlistId": playlist_id,
+            "maxResults": max_results
+        }
+
+        response = self._request("GET", "/youtube/playlist/videos", params=params)
+        
+        # Convert video list to YoutubeVideo objects
+        videos = [YoutubeVideo(**video) for video in response.get("videos", [])]
+        
+        return YoutubePlaylistVideos(
+            playlist_id=response.get("playlist_id", ""),
+            playlist_title=response.get("playlist_title", ""),
+            videos=videos
+        ) 

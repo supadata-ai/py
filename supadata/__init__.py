@@ -14,7 +14,12 @@ from supadata.types import (
     Map,
     CrawlJob,
     CrawlPage,
-    CrawlResponse
+    CrawlResponse,
+    YoutubeVideo,
+    YoutubeChannel,
+    YoutubePlaylist,
+    YoutubeChannelVideos,
+    YoutubePlaylistVideos
 )
 
 __version__ = version("supadata")
@@ -28,5 +33,10 @@ __all__ = [
     "SupadataError",
     "CrawlJob",
     "CrawlPage",
-    "CrawlResponse"
+    "CrawlResponse",
+    "YoutubeVideo",
+    "YoutubeChannel",
+    "YoutubePlaylist",
+    "YoutubeChannelVideos",
+    "YoutubePlaylistVideos"
 ] 

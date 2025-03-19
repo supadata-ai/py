@@ -247,8 +247,8 @@ def test_gateway_error_404(client: Supadata, requests_mock) -> None:
         client._request("GET", "/invalid/endpoint")
 
     error = exc_info.value
-    assert error.error == "invalid-request"
-    assert error.message == "Endpoint does not exist"
+    assert error.error == "not-found"
+    assert error.message == "Endpoint does not exist or resource not found"
     assert error.details == "The API endpoint you are trying to access does not exist"
 
 
@@ -318,8 +318,8 @@ def test_youtube_video_invalid_id(client: Supadata, requests_mock) -> None:
         client.youtube.video(video_id)
 
     error = exc_info.value
-    assert error.error == "invalid-request"
-    assert error.message == "Endpoint does not exist"
+    assert error.error == "not-found"
+    assert error.message == "Endpoint does not exist or resource not found"
     assert error.details == "The requested item could not be found"
 
 
@@ -368,8 +368,8 @@ def test_youtube_channel_invalid_id(client: Supadata, requests_mock) -> None:
         client.youtube.channel(channel_id)
 
     error = exc_info.value
-    assert error.error == "invalid-request"
-    assert error.message == "Endpoint does not exist"
+    assert error.error == "not-found"
+    assert error.message == "Endpoint does not exist or resource not found"
     assert error.details == "The requested item could not be found"
 
 
@@ -416,8 +416,8 @@ def test_youtube_playlist_invalid_id(client: Supadata, requests_mock) -> None:
         client.youtube.playlist(playlist_id)
 
     error = exc_info.value
-    assert error.error == "invalid-request"
-    assert error.message == "Endpoint does not exist"
+    assert error.error == "not-found"
+    assert error.message == "Endpoint does not exist or resource not found"
     assert error.details == "The requested item could not be found"
 
 
@@ -457,8 +457,8 @@ def test_youtube_channel_videos_invalid_id(client: Supadata, requests_mock) -> N
         client.youtube.channel.videos(channel_id)
 
     error = exc_info.value
-    assert error.error == "invalid-request"
-    assert error.message == "Endpoint does not exist"
+    assert error.error == "not-found"
+    assert error.message == "Endpoint does not exist or resource not found"
     assert error.details == "The requested item could not be found"
 
 
@@ -500,6 +500,6 @@ def test_youtube_playlist_videos_invalid_id(client: Supadata, requests_mock) -> 
         client.youtube.playlist.videos(playlist_id)
 
     error = exc_info.value
-    assert error.error == "invalid-request"
-    assert error.message == "Endpoint does not exist"
+    assert error.error == "not-found"
+    assert error.message == "Endpoint does not exist or resource not found"
     assert error.details == "The requested item could not be found"

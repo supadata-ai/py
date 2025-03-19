@@ -1,12 +1,13 @@
 """Main Supadata client implementation."""
 
-from typing import Dict, Any
+from typing import Any, Dict
+
 import requests
 
 from supadata.errors import SupadataError
 
-from .youtube import YouTube
 from .web import Web
+from .youtube import YouTube
 
 
 class Supadata:
@@ -57,8 +58,8 @@ class Supadata:
             )
         elif status_code == 404:
             raise SupadataError(
-                error="invalid-request",
-                message="Endpoint does not exist",
+                error="not-found",
+                message="Endpoint does not exist or resource not found",
                 details=error_message or "The API endpoint you are trying to access does not exist"
             )
         elif status_code == 429:

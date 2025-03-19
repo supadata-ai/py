@@ -22,19 +22,19 @@ from supadata import Supadata, SupadataError
 supadata = Supadata(api_key="YOUR_API_KEY")
 
 # Get YouTube transcript with Spanish language preference
-transcript = supadata.youtube.transcript(video_id="VIDEO_ID", lang="es")
+transcript = supadata.youtube.transcript(video_id="dQw4w9WgXcQ", lang="es")
 print(f"Got transcript {transcript.content}")
 
 # Translate YouTube transcript to Spanish
 translated = supadata.youtube.translate(
-    video_id="VIDEO_ID",
+    video_id="dQw4w9WgXcQ",
     lang="es"
 )
 print(f"Got translated transcript in {translated.lang}")
 
 # Get plain text transcript
 text_transcript = supadata.youtube.transcript(
-    video_id="VIDEO_ID",
+    video_id="dQw4w9WgXcQ",
     text=True
 )
 print(text_transcript.content)
@@ -67,23 +67,23 @@ except SupadataError as e:
     print(f"Crawl job failed: {e}")
 
 # Get Video Metadata
-video = supadata.youtube.video(id="VIDEO_ID")
+video = supadata.youtube.video(id="https://youtu.be/dQw4w9WgXcQ") # can be url or video id
 print(f"Video: {video}")
 
 # Get Channel Metadata
-channel = supadata.youtube.channel(id="CHANNEL_ID")
+channel = supadata.youtube.channel(id="https://youtube.com/@RickAstleyVEVO") # can be url, channel id, handle
 print(f"Channel: {channel}")
 
 # Get a list of the channel video IDs
-channel_videos = supadata.youtube.channel.videos(id="CHANNEL_ID")
+channel_videos = supadata.youtube.channel.videos(id="RickAstleyVEVO") # can be url, channel id, or handle
 print(f"Channel Video IDs: {channel_videos}")
 
 # Get Playlist metadata
-playlist = supadata.youtube.playlist(id="PLAYLIST_ID")
+playlist = supadata.youtube.playlist(id="PLlaN88a7y2_plecYoJxvRFTLHVbIVAOoc") # can be url or playlist id
 print(f"Playlist: {playlist}")
 
 # Get a list of the playlist video IDs
-playlist_videos = supadata.youtube.playlist.videos(id="PLAYLIST_ID")
+playlist_videos = supadata.youtube.playlist.videos(id="https://www.youtube.com/playlist?list=PLlaN88a7y2_plecYoJxvRFTLHVbIVAOoc") # can be url or playlist id
 print(f"Playlist Videos IDs: {playlist_videos}")
 ```
 

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "supadata"
-version = "1.0.6"
+version = "1.0.7"
 authors = [{ name = "Supadata", email = "support@supadata.ai" }]
 dependencies = ["requests >= 2.28.1"]
 description = "The official Python SDK for Supadata - scrape web and YouTube content with ease"

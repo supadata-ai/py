@@ -65,6 +65,26 @@ try:
         print(f"Content: {page.content}")
 except SupadataError as e:
     print(f"Crawl job failed: {e}")
+
+# Get Video Metadata
+video = supadata.youtube.video(id="VIDEO_ID")
+print(f"Video: {video}")
+
+# Get Channel Metadata
+channel = supadata.youtube.channel(id="CHANNEL_ID")
+print(f"Channel: {channel}")
+
+# Get a list of the channel video IDs
+channel_videos = supadata.youtube.channel.videos(id="CHANNEL_ID")
+print(f"Channel Video IDs: {channel_videos}")
+
+# Get Playlist metadata
+playlist = supadata.youtube.playlist(id="PLAYLIST_ID")
+print(f"Playlist: {playlist}")
+
+# Get a list of the playlist video IDs
+playlist_videos = supadata.youtube.playlist.videos(id="PLAYLIST_ID")
+print(f"Playlist Videos IDs: {playlist_videos}")
 ```
 
 ## Error Handling

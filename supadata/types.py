@@ -90,15 +90,19 @@ class CrawlPage:
 
     Attributes:
         url: The URL that was scraped
-        content: The markdown content extracted from the URL
-        name: The title of the webpage
+        content: The Markdown content extracted from the URL
+        name: The name of the webpage
         description: A description of the webpage
+        og_url: Open Graph URL for the webpage
+        count_characters: The number of characters in the content
     """
 
     url: str
     content: str
     name: str
     description: str
+    og_url: Optional[str]
+    count_characters: int
 
 
 @dataclass

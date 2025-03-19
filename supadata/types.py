@@ -16,10 +16,10 @@ class TranscriptChunk:
         lang: ISO 639-1 language code of chunk
     """
 
-    text: str
-    offset: int
-    duration: int
-    lang: str
+    text: str = ""
+    offset: int = 0
+    duration: int = 0
+    lang: str = ""
 
 
 @dataclass
@@ -32,9 +32,15 @@ class Transcript:
         available_langs: List of available language codes
     """
 
-    content: Union[List[TranscriptChunk], str]
-    lang: str
-    available_langs: List[str]
+    content: Union[List[TranscriptChunk], str] = None
+    lang: str = ""
+    available_langs: List[str] = None
+
+    def __post_init__(self):
+        if self.content is None:
+            self.content = []
+        if self.available_langs is None:
+            self.available_langs = []
 
 
 @dataclass
@@ -46,8 +52,12 @@ class TranslatedTranscript:
         lang: ISO 639-1 language code of translation
     """
 
-    content: Union[List[TranscriptChunk], str]
-    lang: str
+    content: Union[List[TranscriptChunk], str] = None
+    lang: str = ""
+
+    def __post_init__(self):
+        if self.content is None:
+            self.content = []
 
 
 @dataclass
@@ -65,12 +75,16 @@ class Scrape:
     """
 
     url: str
-    content: str
-    name: str
-    description: str
-    og_url: Optional[str]
-    count_characters: int
-    urls: List[str]
+    content: str = ""
+    name: str = ""
+    description: str = ""
+    og_url: Optional[str] = None
+    count_characters: int = 0
+    urls: List[str] = None
+
+    def __post_init__(self):
+        if self.urls is None:
+            self.urls = []
 
 
 @dataclass
@@ -81,7 +95,11 @@ class Map:
         urls: List of URLs found on the webpage
     """
 
-    urls: List[str]
+    urls: List[str] = None
+
+    def __post_init__(self):
+        if self.urls is None:
+            self.urls = []
 
 
 @dataclass
@@ -98,11 +116,11 @@ class CrawlPage:
     """
 
     url: str
-    content: str
-    name: str
-    description: str
-    og_url: Optional[str]
-    count_characters: int
+    content: str = ""
+    name: str = ""
+    description: str = ""
+    og_url: Optional[str] = None
+    count_characters: int = 0
 
 
 @dataclass
@@ -162,16 +180,26 @@ class YoutubeVideo:
     """
 
     id: str
-    title: str
-    description: str
-    duration: int
-    channel: YoutubeChannelBaseDict
-    tags: List[str]
-    thumbnail: str
-    uploaded_date: datetime
-    view_count: int
-    like_count: int
-    transcript_languages: List[str]
+    title: str = ""
+    description: str = ""
+    duration: int = 0
+    channel: YoutubeChannelBaseDict = None
+    tags: List[str] = None
+    thumbnail: str = ""
+    uploaded_date: datetime = None
+    view_count: int = 0
+    like_count: int = 0
+    transcript_languages: List[str] = None
+
+    def __post_init__(self):
+        if self.channel is None:
+            self.channel = YoutubeChannelBaseDict(id="", name="")
+        if self.tags is None:
+            self.tags = []
+        if self.uploaded_date is None:
+            self.uploaded_date = datetime.now()
+        if self.transcript_languages is None:
+            self.transcript_languages = []
 
 
 @dataclass
@@ -190,13 +218,13 @@ class YoutubeChannel:
     """
 
     id: str
-    name: str
-    handle: str
-    description: str
-    subscriber_count: int
-    video_count: int
-    thumbnail: str
-    banner: str
+    name: str = ""
+    handle: str = ""
+    description: str = ""
+    subscriber_count: int = 0
+    video_count: int = 0
+    thumbnail: str = ""
+    banner: str = ""
 
 
 @dataclass
@@ -214,9 +242,15 @@ class YoutubePlaylist:
     """
 
     id: str
-    title: str
-    video_count: int
-    view_count: int
-    last_updated: datetime
-    channel: YoutubeChannelBaseDict
+    title: str = ""
+    video_count: int = 0
+    view_count: int = 0
+    last_updated: datetime = None
+    channel: YoutubeChannelBaseDict = None
     description: Optional[str] = None
+
+    def __post_init__(self):
+        if self.last_updated is None:
+            self.last_updated = datetime.now()
+        if self.channel is None:
+            self.channel = YoutubeChannelBaseDict(id="", name="")

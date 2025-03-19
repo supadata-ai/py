@@ -97,8 +97,16 @@ class Web:
 
             if crawl_response.pages:
                 # Convert each page dict to a CrawlPage object
-                page_objects = [CrawlPage(**page) for page in crawl_response.pages]
-                all_pages.extend(page_objects)
+                for page in crawl_response.pages:
+                    page_data = {
+                        'url': page.get('url', ''),
+                        'content': page.get('content', ''),
+                        'name': page.get('name', ''),
+                        'description': page.get('description', ''), 
+                        'og_url': page.get('og_url', None),
+                        'count_characters': page.get('count_characters', 0)
+                    }
+                    all_pages.append(CrawlPage(**page_data))
 
             if not crawl_response.next:
                 break

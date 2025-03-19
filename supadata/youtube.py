@@ -51,16 +51,29 @@ class YouTube:
         response = self._request("GET", "/youtube/transcript", params=params)
 
         # Convert chunks if present
-        if not text and isinstance(response.get("content"), list):
-            response["content"] = [
-                TranscriptChunk(
-                    text=chunk.get("text", ""),
-                    offset=chunk.get("offset", 0),
-                    duration=chunk.get("duration", 0),
-                    lang=chunk.get("lang", ""),
-                )
-                for chunk in response["content"]
-            ]
+        content = response.get("content")
+        if not text:
+            if isinstance(content, list):
+                processed_content = []
+                for chunk in content:
+                    chunk_obj = TranscriptChunk(
+                        text=chunk.get("text", ""),
+                        offset=chunk.get("offset", 0),
+                        duration=chunk.get("duration", 0),
+                        lang=chunk.get("lang", ""),
+                    )
+                    processed_content.append(chunk_obj)
+            else:
+                processed_content = []
+        else:
+            processed_content = content if isinstance(content, str) else ""
+
+        response["content"] = processed_content
+        
+        if "lang" not in response:
+            response["lang"] = ""
+        if "available_langs" not in response:
+            response["available_langs"] = []
 
         return Transcript(**response)
 
@@ -87,16 +100,28 @@ class YouTube:
         )
 
         # Convert chunks if present
-        if not text and isinstance(response.get("content"), list):
-            response["content"] = [
-                TranscriptChunk(
-                    text=chunk.get("text", ""),
-                    offset=chunk.get("offset", 0),
-                    duration=chunk.get("duration", 0),
-                    lang=chunk.get("lang", ""),
-                )
-                for chunk in response["content"]
-            ]
+        content = response.get("content")
+        if not text:
+            if isinstance(content, list):
+                processed_content = []
+                for chunk in content:
+                    chunk_obj = TranscriptChunk(
+                        text=chunk.get("text", ""),
+                        offset=chunk.get("offset", 0),
+                        duration=chunk.get("duration", 0),
+                        lang=chunk.get("lang", ""),
+                    )
+                    processed_content.append(chunk_obj)
+            else:
+                processed_content = []
+        else:
+            processed_content = content if isinstance(content, str) else ""
+
+        response["content"] = processed_content
+        
+        # Add default value for missing lang field
+        if "lang" not in response:
+            response["lang"] = lang
 
         return TranslatedTranscript(**response)
 
@@ -113,7 +138,33 @@ class YouTube:
             SupadataError: If the API request fails
         """
         response: dict = self._request("GET", "/youtube/video", params={"id": id})
-        uploaded_time = datetime.fromisoformat(response.pop("upload_date"))
+        
+        # Safely convert upload_date with fallback
+        try:
+            uploaded_time = datetime.fromisoformat(response.pop("upload_date", datetime.now().isoformat()))
+        except (ValueError, TypeError):
+            uploaded_time = datetime.now()
+        
+        # Ensure all required fields have defaults
+        defaults = {
+            "id": id,
+            "title": "",
+            "description": "",
+            "duration": 0,
+            "channel": {"id": "", "name": ""},
+            "tags": [],
+            "thumbnail": "",
+            "view_count": 0,
+            "like_count": 0,
+            "transcript_languages": [],
+        }
+        
+        # Apply defaults for any missing fields
+        for key, default_value in defaults.items():
+            if key not in response:
+                response[key] = default_value
+            elif key == "channel" and not isinstance(response[key], dict):
+                response[key] = defaults[key]
 
         return YoutubeVideo(**response, uploaded_date=uploaded_time)
 
@@ -160,6 +211,23 @@ class YouTube:
             response: dict = self._youtube._request(
                 "GET", "/youtube/channel", params={"id": id}
             )
+            
+            # Ensure all required fields exist with defaults
+            defaults = {
+                "id": id,
+                "name": "",
+                "handle": "",
+                "description": "",
+                "subscriber_count": 0,
+                "video_count": 0,
+                "thumbnail": "",
+                "banner": "",
+            }
+            
+            # Apply defaults for any missing fields
+            for key, default_value in defaults.items():
+                if key not in response:
+                    response[key] = default_value
 
             return YoutubeChannel(**response)
 
@@ -185,7 +253,6 @@ class YouTube:
             response: dict = self._youtube._request(
                 "GET", "/youtube/channel/videos", params=query_params
             )
-
             return response.get("video_ids", [])
 
     class _Playlist:
@@ -207,7 +274,29 @@ class YouTube:
             response: dict = self._youtube._request(
                 "GET", "/youtube/playlist", params={"id": id}
             )
-            last_updated = datetime.fromisoformat(response.pop("last_updated"))
+            
+            # Safely convert last_updated with fallback
+            try:
+                last_updated = datetime.fromisoformat(response.pop("last_updated", datetime.now().isoformat()))
+            except (ValueError, TypeError):
+                last_updated = datetime.now()
+            
+            # Ensure all required fields exist with defaults
+            defaults = {
+                "id": id,
+                "title": "",
+                "video_count": 0,
+                "view_count": 0,
+                "channel": {"id": "", "name": ""},
+                "description": None
+            }
+            
+            # Apply defaults for any missing fields
+            for key, default_value in defaults.items():
+                if key not in response:
+                    response[key] = default_value
+                elif key == "channel" and not isinstance(response[key], dict):
+                    response[key] = defaults[key]
 
             return YoutubePlaylist(**response, last_updated=last_updated)
 
@@ -229,8 +318,8 @@ class YouTube:
             query_params = {"id": id}
             if limit:
                 query_params["limit"] = limit
+                
             response: dict = self._youtube._request(
                 "GET", "/youtube/playlist/videos", params=query_params
             )
-
             return response.get("video_ids", [])

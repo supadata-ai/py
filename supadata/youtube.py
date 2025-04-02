@@ -1,7 +1,7 @@
 """YouTube-related operations for Supadata."""
 
 from datetime import datetime
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Optional, Literal
 
 from .errors import SupadataError
 from .types import (
@@ -11,6 +11,7 @@ from .types import (
     YoutubeChannel,
     YoutubePlaylist,
     YoutubeVideo,
+    VideoIds,
 )
 
 
@@ -231,29 +232,42 @@ class YouTube:
 
             return YoutubeChannel(**response)
 
-        def videos(self, id: str, limit: int | None = None) -> List[str]:
-            """Get a list of video IDs from a YouTube channel.
+        def videos(
+            self, 
+            id: str, 
+            limit: Optional[int] = None,
+            type: Literal["all", "video", "short"] = "all"
+        ) -> VideoIds:
+            """Get video IDs from a YouTube channel.
 
             Args:
                 id: YouTube Channel ID
                 limit: The limit of videos to be returned. None will
                     return the default (30 videos)
+                type: The type of videos to fetch.
+                    'all': Both regular videos and shorts (default)
+                    'video': Only regular videos
+                    'short': Only shorts
 
             Returns:
-                A list of video IDs.
+                VideoIds object containing lists of video IDs and short IDs
 
             Raises:
                 SupadataError: If the API request fails
             """
             self._youtube._validate_limit(limit)
-            query_params = {"id": id}
+            query_params = {"id": id, "type": type}
             if limit:
                 query_params["limit"] = limit
 
             response: dict = self._youtube._request(
                 "GET", "/youtube/channel/videos", params=query_params
             )
-            return response.get("video_ids", [])
+            
+            return VideoIds(
+                video_ids=response.get("video_ids", []),
+                short_ids=response.get("short_ids", [])
+            )
 
     class _Playlist:
         def __init__(self, youtube: "YouTube"):
@@ -300,8 +314,12 @@ class YouTube:
 
             return YoutubePlaylist(**response, last_updated=last_updated)
 
-        def videos(self, id: str, limit: int | None = None) -> List[str]:
-            """Get a list of the IDs of the list of video IDs from a YouTube playlist.
+        def videos(
+            self, 
+            id: str, 
+            limit: Optional[int] = None
+        ) -> VideoIds:
+            """Get video IDs from a YouTube playlist.
 
             Args:
                 id: YouTube Playlist ID
@@ -309,7 +327,7 @@ class YouTube:
                     return the default (30 videos)
 
             Returns:
-                A list of video IDs.
+                VideoIds object containing lists of video IDs and short IDs
 
             Raises:
                 SupadataError: If the API request fails
@@ -322,4 +340,8 @@ class YouTube:
             response: dict = self._youtube._request(
                 "GET", "/youtube/playlist/videos", params=query_params
             )
-            return response.get("video_ids", [])
+            
+            return VideoIds(
+                video_ids=response.get("video_ids", []),
+                short_ids=response.get("short_ids", [])
+            )

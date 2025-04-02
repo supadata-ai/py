@@ -74,17 +74,26 @@ print(f"Video: {video}")
 channel = supadata.youtube.channel(id="https://youtube.com/@RickAstleyVEVO") # can be url, channel id, handle
 print(f"Channel: {channel}")
 
-# Get a list of the channel video IDs
-channel_videos = supadata.youtube.channel.videos(id="RickAstleyVEVO") # can be url, channel id, or handle
-print(f"Channel Video IDs: {channel_videos}")
+# Get video IDs from a YouTube channel
+channel_videos = supadata.youtube.channel.videos(
+    id="RickAstleyVEVO",  # can be url, channel id, or handle
+    type="all",  # 'all', 'video', or 'short'
+    limit=50
+)
+print(f"Regular videos: {channel_videos.video_ids}")
+print(f"Shorts: {channel_videos.short_ids}")
 
 # Get Playlist metadata
 playlist = supadata.youtube.playlist(id="PLlaN88a7y2_plecYoJxvRFTLHVbIVAOoc") # can be url or playlist id
 print(f"Playlist: {playlist}")
 
-# Get a list of the playlist video IDs
-playlist_videos = supadata.youtube.playlist.videos(id="https://www.youtube.com/playlist?list=PLlaN88a7y2_plecYoJxvRFTLHVbIVAOoc") # can be url or playlist id
-print(f"Playlist Videos IDs: {playlist_videos}")
+# Get video IDs from a YouTube playlist
+playlist_videos = supadata.youtube.playlist.videos(
+    id="https://www.youtube.com/playlist?list=PLlaN88a7y2_plecYoJxvRFTLHVbIVAOoc",  # can be url or playlist id
+    limit=50
+)
+print(f"Regular videos: {playlist_videos.video_ids}")
+print(f"Shorts: {playlist_videos.short_ids}")
 ```
 
 ## Error Handling

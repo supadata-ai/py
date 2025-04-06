@@ -254,3 +254,22 @@ class YoutubePlaylist:
             self.last_updated = datetime.now()
         if self.channel is None:
             self.channel = YoutubeChannelBaseDict(id="", name="")
+
+
+@dataclass
+class VideoIds:
+    """Container for YouTube video IDs.
+    
+    Attributes:
+        video_ids: List of regular YouTube video IDs
+        short_ids: List of YouTube Shorts IDs
+    """
+    
+    video_ids: List[str] = None
+    short_ids: List[str] = None
+    
+    def __post_init__(self):
+        if self.video_ids is None:
+            self.video_ids = []
+        if self.short_ids is None:
+            self.short_ids = []

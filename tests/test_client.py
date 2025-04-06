@@ -427,16 +427,50 @@ def test_youtube_channel_videos(client: Supadata, requests_mock) -> None:
         "videoIds": [
             "PQ2WjtaPfXU",
             "UIVADiGfwWc",
+        ],
+        "shortIds": [
+            "abc123",
+            "def456",
         ]
     }
 
     requests_mock.get(
-        f"{client.base_url}/youtube/channel/videos?id={channel_id}", json=mock_response
+        f"{client.base_url}/youtube/channel/videos?id={channel_id}&type=all", json=mock_response
     )
     channel_videos = client.youtube.channel.videos(channel_id)
-    assert isinstance(channel_videos, list)
-    assert len(channel_videos) == len(mock_response["videoIds"])
-    for i in channel_videos:
+    assert hasattr(channel_videos, "video_ids")
+    assert hasattr(channel_videos, "short_ids")
+    assert isinstance(channel_videos.video_ids, list)
+    assert isinstance(channel_videos.short_ids, list)
+    assert len(channel_videos.video_ids) == len(mock_response["videoIds"])
+    assert len(channel_videos.short_ids) == len(mock_response["shortIds"])
+    for i in channel_videos.video_ids:
+        assert i in mock_response["videoIds"]
+    for i in channel_videos.short_ids:
+        assert i in mock_response["shortIds"]
+
+
+def test_youtube_channel_videos_with_type(client: Supadata, requests_mock) -> None:
+    channel_id = "UCsBjURrPoezyLs9EqgamOA"
+    mock_response = {
+        "videoIds": [
+            "PQ2WjtaPfXU",
+            "UIVADiGfwWc",
+        ],
+        "shortIds": []
+    }
+
+    requests_mock.get(
+        f"{client.base_url}/youtube/channel/videos?id={channel_id}&type=video", json=mock_response
+    )
+    channel_videos = client.youtube.channel.videos(channel_id, type="video")
+    assert hasattr(channel_videos, "video_ids")
+    assert hasattr(channel_videos, "short_ids")
+    assert isinstance(channel_videos.video_ids, list)
+    assert isinstance(channel_videos.short_ids, list)
+    assert len(channel_videos.video_ids) == len(mock_response["videoIds"])
+    assert len(channel_videos.short_ids) == 0
+    for i in channel_videos.video_ids:
         assert i in mock_response["videoIds"]
 
 
@@ -448,7 +482,7 @@ def test_youtube_channel_videos_invalid_id(client: Supadata, requests_mock) -> N
         "details": "The requested item could not be found.",
     }
     requests_mock.get(
-        f"{client.base_url}/youtube/channel/videos?id={channel_id}",
+        f"{client.base_url}/youtube/channel/videos?id={channel_id}&type=all",
         status_code=404,
         json=mock_response,
     )
@@ -468,6 +502,10 @@ def test_youtube_playlist_videos(client: Supadata, requests_mock) -> None:
         "videoIds": [
             "zDNaUi2cjv4",
             "B1t4Fjlomi8",
+        ],
+        "shortIds": [
+            "short1",
+            "short2"
         ]
     }
     requests_mock.get(
@@ -476,10 +514,16 @@ def test_youtube_playlist_videos(client: Supadata, requests_mock) -> None:
     )
 
     playlist_videos = client.youtube.playlist.videos(playlist_id)
-    assert isinstance(playlist_videos, list)
-    assert len(playlist_videos) == len(mock_response["videoIds"])
-    for i in playlist_videos:
+    assert hasattr(playlist_videos, "video_ids")
+    assert hasattr(playlist_videos, "short_ids")
+    assert isinstance(playlist_videos.video_ids, list)
+    assert isinstance(playlist_videos.short_ids, list)
+    assert len(playlist_videos.video_ids) == len(mock_response["videoIds"])
+    assert len(playlist_videos.short_ids) == len(mock_response["shortIds"])
+    for i in playlist_videos.video_ids:
         assert i in mock_response["videoIds"]
+    for i in playlist_videos.short_ids:
+        assert i in mock_response["shortIds"]
 
 
 def test_youtube_playlist_videos_invalid_id(client: Supadata, requests_mock) -> None:

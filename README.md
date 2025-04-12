@@ -116,39 +116,10 @@ video_batch_job = supadata.youtube.video.batch(
 print(f"Started video metadata batch job: {video_batch_job.job_id}")
 
 # Get the results of a batch job (poll until status is 'completed' or 'failed')
-import time
-
-job_id = transcript_batch_job.job_id # or video_batch_job.job_id
-
-while True:
-    try:
-        batch_results = supadata.youtube.batch.get_batch_results(job_id=job_id)
-        print(f"Job {job_id} status: {batch_results.status}")
-
-        if batch_results.status == "completed":
-            print(f"Job completed at: {batch_results.completed_at}")
-            print(f"Stats: Total={batch_results.stats.total}, Succeeded={batch_results.stats.succeeded}, Failed={batch_results.stats.failed}")
-            for item in batch_results.results:
-                if item.error_code:
-                    print(f"  Video {item.video_id} failed with error: {item.error_code}")
-                elif item.transcript:
-                    print(f"  Video {item.video_id} transcript ({item.transcript.lang}): {len(item.transcript.content)} chunks/chars")
-                elif item.video:
-                     print(f"  Video {item.video_id} metadata: Title='{item.video.title}'")
-            break
-        elif batch_results.status == "failed":
-            print(f"Job {job_id} failed.")
-            # You might want to add more error details if available in a real scenario
-            break
-        elif batch_results.status in ["queued", "active"]:
-            print("Waiting for job to complete...")
-            time.sleep(5) # Poll every 5 seconds
-        else:
-            print(f"Unknown job status: {batch_results.status}")
-            break
-    except SupadataError as e:
-        print(f"Error fetching batch results for job {job_id}: {e}")
-        break
+batch_results = supadata.youtube.batch.get_batch_results(job_id=transcript_batch_job.job_id)
+print(f"Job status: {batch_results.status}")
+print(f"Stats: {batch_results.stats.succeeded}/{batch_results.stats.total} videos processed")
+print(f"First result: {batch_results.results[0].video_id if batch_results.results else 'No results yet'}")
 
 ## Error Handling
 

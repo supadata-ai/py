@@ -168,36 +168,81 @@ class YouTube:
         return YoutubeVideo(**response, uploaded_date=uploaded_time)
 
     @property
-    def channel(self):
-        """Channel namespace for YouTube operations."""
+    def channel(self) -> "_Channel":
+        """Channel namespace for YouTube operations.
+        
+        Returns:
+            Channel handler that can be called with an ID to get channel metadata.
+            
+        Example:
+            ```python
+            channel = supadata.youtube.channel("UC_9-kyTW8ZkZNDHQJ6FgpwQ")
+            ```
+        """
         if self._channel_instance is None:
             self._channel_instance = self._Channel(self)
         return self._channel_instance
 
     @property
-    def playlist(self):
-        """Playlist namespace for YouTube operations."""
+    def playlist(self) -> "_Playlist":
+        """Playlist namespace for YouTube operations.
+        
+        Returns:
+            Playlist handler that can be called with an ID to get playlist metadata.
+            
+        Example:
+            ```python
+            playlist = supadata.youtube.playlist("PLlaN88a7y2_plecYoJxvRFTLHVbIVAOoc")
+            ```
+        """
         if self._playlist_instance is None:
             self._playlist_instance = self._Playlist(self)
         return self._playlist_instance
 
     @property
-    def video(self):
-        """Video namespace for YouTube operations."""
+    def video(self) -> "_Video":
+        """Video namespace for YouTube operations.
+        
+        Returns:
+            Video handler that can be called with an ID to get video metadata.
+            
+        Example:
+            ```python
+            video = supadata.youtube.video("dQw4w9WgXcQ")
+            ```
+        """
         if self._video_instance is None:
             self._video_instance = self._Video(self)
         return self._video_instance
 
     @property
-    def transcript(self):
-        """Transcript namespace for YouTube operations."""
+    def transcript(self) -> "_Transcript":
+        """Transcript namespace for YouTube operations.
+        
+        Returns:
+            Transcript handler that can be called with a video ID to get transcript.
+            
+        Example:
+            ```python
+            transcript = supadata.youtube.transcript("dQw4w9WgXcQ")
+            ```
+        """
         if self._transcript_instance is None:
             self._transcript_instance = self._Transcript(self)
         return self._transcript_instance
 
     @property
-    def batch(self):
-        """Batch namespace for YouTube operations."""
+    def batch(self) -> "_Batch":
+        """Batch namespace for YouTube operations.
+        
+        Returns:
+            Batch handler for working with batch operations.
+            
+        Example:
+            ```python
+            batch_results = supadata.youtube.batch.get_batch_results("job_id_here")
+            ```
+        """
         if self._batch_instance is None:
             self._batch_instance = self._Batch(self)
         return self._batch_instance
@@ -220,10 +265,18 @@ class YouTube:
             """Get the channel metadata for a YouTube Channel.
 
             Args:
-                id: YouTube Channel ID
+                id: YouTube Channel ID, URL, or handle (@username)
 
             Returns:
-                YoutubeChannel object containing the metadata
+                YoutubeChannel object containing the metadata:
+                - id: Channel ID
+                - name: Channel name
+                - handle: Channel handle (if available)
+                - description: Channel description
+                - subscriber_count: Number of subscribers
+                - video_count: Number of videos
+                - thumbnail: URL to channel thumbnail
+                - banner: URL to channel banner
 
             Raises:
                 SupadataError: If the API request fails
@@ -328,10 +381,17 @@ class YouTube:
             """Gets the playlist metadata for a YouTube public playlist.
 
             Args:
-                id: YouTube playlist id
+                id: YouTube playlist ID or URL
 
             Returns:
-                YoutubePlaylist object containing the metadata
+                YoutubePlaylist object containing the metadata:
+                - id: Playlist ID
+                - title: Playlist title
+                - description: Playlist description (if available)
+                - video_count: Number of videos in the playlist
+                - view_count: Number of views
+                - channel: Dict containing channel id and name
+                - last_updated: Datetime when the playlist was last updated
 
             Raises:
                 SupadataError: If the API request fails
@@ -405,10 +465,21 @@ class YouTube:
             """Get the video metadata for a YouTube video.
 
             Args:
-                id: YouTube video ID
+                id: YouTube video ID or URL
 
             Returns:
-                YoutubeVideo object containing the metadata
+                YoutubeVideo object containing the metadata:
+                - id: Video ID
+                - title: Video title
+                - description: Video description
+                - duration: Video duration in seconds
+                - channel: Dict containing channel id and name
+                - tags: List of video tags
+                - thumbnail: URL to video thumbnail
+                - view_count: Number of views
+                - like_count: Number of likes
+                - transcript_languages: List of available transcript languages
+                - uploaded_date: Datetime when the video was uploaded
 
             Raises:
                 SupadataError: If the API request fails
@@ -479,12 +550,15 @@ class YouTube:
             """Get transcript for a YouTube video.
 
             Args:
-                video_id: YouTube video ID
+                video_id: YouTube video ID or URL
                 lang: Language code for preferred transcript language (e.g., 'es' for Spanish)
                 text: Whether to return plain text instead of segments
 
             Returns:
-                Transcript object containing content, language and available languages
+                Transcript object containing:
+                - content: List of TranscriptChunk objects or plain text if text=True
+                - lang: Language code of the transcript
+                - available_langs: List of available language codes
 
             Raises:
                 SupadataError: If the API request fails
@@ -559,12 +633,14 @@ class YouTube:
             """Get translated transcript for a YouTube video.
 
             Args:
-                video_id: YouTube video ID
+                video_id: YouTube video ID or URL
                 lang: Target language code (e.g., 'es' for Spanish)
                 text: Whether to return plain text instead of segments
 
             Returns:
-                TranslatedTranscript object containing translated content
+                TranslatedTranscript object containing:
+                - content: List of TranscriptChunk objects or plain text if text=True
+                - lang: Language code of the translated transcript
 
             Raises:
                 SupadataError: If the API request fails
@@ -612,7 +688,10 @@ class YouTube:
                 job_id: The ID of the batch job.
 
             Returns:
-                BatchResults object containing the job status, results, and stats.
+                BatchResults object containing:
+                - status: Current job status ('pending', 'processing', 'completed', 'failed')
+                - results: List of processed items (videos or transcripts)
+                - stats: Statistics about the job (total items, processed, errors)
 
             Raises:
                 SupadataError: If the API request fails.

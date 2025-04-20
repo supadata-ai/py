@@ -517,8 +517,8 @@ class YouTube:
 
         Example:
             ```python
-            channel_info = supadata.youtube.channel("UC_...")
-            videos = supadata.youtube.channel.videos("UC_...")
+            channel_info = supadata.youtube.channel(id="UC_...")
+            videos = supadata.youtube.channel.videos(id="UC_...")
             batch_job = supadata.youtube.channel.batch(channel_id="UC_...")
             ```
         Returns:
@@ -535,8 +535,8 @@ class YouTube:
 
         Example:
             ```python
-            playlist_info = supadata.youtube.playlist("PL_...")
-            videos = supadata.youtube.playlist.videos("PL_...")
+            playlist_info = supadata.youtube.playlist(id="PL_...")
+            videos = supadata.youtube.playlist.videos(id="PL_...")
             ```
         Returns:
             An object for playlist operations.
@@ -552,7 +552,7 @@ class YouTube:
 
         Example:
             ```python
-            video_info = supadata.youtube.video("dQw4w9WgXcQ")
+            video_info = supadata.youtube.video(id="dQw4w9WgXcQ")
             batch_job = supadata.youtube.video.batch(video_ids=["dQw..."])
             ```
         Returns:
@@ -569,8 +569,8 @@ class YouTube:
 
         Example:
             ```python
-            transcript = supadata.youtube.transcript("dQw4w9WgXcQ")
-            translated = supadata.youtube.transcript.translate("dQw...", lang="es")
+            transcript = supadata.youtube.transcript(video_id="dQw4w9WgXcQ")
+            translated = supadata.youtube.transcript.translate(video_id="dQw...", lang="es")
             batch_job = supadata.youtube.transcript.batch(video_ids=["dQw..."])
             ```
         Returns:

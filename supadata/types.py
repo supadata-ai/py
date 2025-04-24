@@ -1,6 +1,6 @@
 """Type definitions for Supadata API responses."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import List, Optional, TypedDict, Union
 
@@ -273,3 +273,112 @@ class VideoIds:
             self.video_ids = []
         if self.short_ids is None:
             self.short_ids = []
+
+
+@dataclass
+class BatchJob:
+    """Response containing the ID of a newly created batch job.
+
+    Attributes:
+        job_id: The unique identifier for the batch job.
+    """
+
+    job_id: str
+
+
+@dataclass
+class BatchResultItem:
+    """Represents a single result item within a batch job.
+
+    Attributes:
+        video_id: The ID of the YouTube video processed.
+        transcript: The transcript object (present if successful and type is transcript).
+        video: The video metadata object (present if successful and type is video).
+        error_code: An error code if processing this specific video failed.
+    """
+
+    video_id: str
+    transcript: Optional[Transcript] = None
+    video: Optional[YoutubeVideo] = None
+    error_code: Optional[str] = None
+
+
+@dataclass
+class BatchStats:
+    """Statistics for a completed batch job.
+
+    Attributes:
+        total: The total number of videos processed.
+        succeeded: The number of videos processed successfully.
+        failed: The number of videos that failed processing.
+    """
+
+    total: int = 0
+    succeeded: int = 0
+    failed: int = 0
+
+
+@dataclass
+class BatchResults:
+    """Represents the complete results of a batch job.
+
+    Attributes:
+        status: The current status of the batch job ('queued', 'active', 'completed', 'failed').
+        results: A list of individual results for each video.
+        stats: Statistics about the processed videos.
+        completed_at: Timestamp when the job completed (ISO 8601 format).
+    """
+
+    status: str
+    results: List[BatchResultItem] = field(default_factory=list)
+    stats: Optional[BatchStats] = None
+    completed_at: Optional[datetime] = None
+
+    def __post_init__(self):
+        # Attempt to parse completed_at if it's a string
+        if isinstance(self.completed_at, str):
+            try:
+                self.completed_at = datetime.fromisoformat(self.completed_at.replace('Z', '+00:00'))
+            except ValueError:
+                self.completed_at = None # Handle potential parsing errors
+        
+        # Process results into BatchResultItem objects
+        processed_results = []
+        if isinstance(self.results, list):
+            for item in self.results:
+                 if isinstance(item, dict):
+                    # Determine if it's a transcript or video result based on keys
+                    transcript_data = item.get('transcript')
+                    video_data = item.get('video')
+                    
+                    transcript_obj = None
+                    if transcript_data and isinstance(transcript_data, dict):
+                       transcript_obj = Transcript(**transcript_data)
+
+                    video_obj = None
+                    if video_data and isinstance(video_data, dict):
+                        # Handle potential date parsing issues for video upload_date
+                        try:
+                            uploaded_time = datetime.fromisoformat(video_data.pop("upload_date", datetime.now().isoformat()))
+                        except (ValueError, TypeError):
+                            uploaded_time = datetime.now()
+                        video_obj = YoutubeVideo(**video_data, uploaded_date=uploaded_time)
+
+                    # Explicitly get values before creating the object
+                    # Use 'video_id' (snake_case) as the key might be auto-converted by dataclass init
+                    current_video_id = item.get('video_id', '')
+                    current_error_code = item.get('error_code') # Assuming this might also be converted
+
+                    processed_results.append(
+                        BatchResultItem(
+                            video_id=current_video_id,
+                            transcript=transcript_obj,
+                            video=video_obj,
+                            error_code=current_error_code
+                        )
+                    )
+        self.results = processed_results
+
+        # Process stats into BatchStats object
+        if isinstance(self.stats, dict):
+            self.stats = BatchStats(**self.stats)

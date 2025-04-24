@@ -18,6 +18,12 @@ from supadata import (
     YoutubeVideo,
 )
 from supadata.errors import SupadataError
+from supadata.types import (
+    BatchJob,
+    BatchResultItem,
+    BatchResults,
+    BatchStats,
+)
 
 
 @pytest.fixture
@@ -547,3 +553,116 @@ def test_youtube_playlist_videos_invalid_id(client: Supadata, requests_mock) -> 
     assert error.error == "not-found"
     assert error.message == "Endpoint does not exist or resource not found"
     assert error.details == "The requested item could not be found"
+
+
+# --- Batch Tests ---
+
+def test_youtube_batch_transcript(client: Supadata, requests_mock) -> None:
+    """Test creating a YouTube transcript batch job."""
+    mock_response = {"jobId": "batch-transcript-job-123"}
+    requests_mock.post(
+        f"{client.base_url}/youtube/transcript/batch", json=mock_response
+    )
+
+    job = client.youtube.transcript.batch(video_ids=["vid1", "vid2"], lang="en")
+    assert isinstance(job, BatchJob)
+    assert job.job_id == "batch-transcript-job-123"
+
+
+def test_youtube_batch_transcript_validation_no_source(client: Supadata) -> None:
+    """Test validation for transcript batch without source."""
+    with pytest.raises(SupadataError, match="Missing source"):
+        client.youtube.transcript.batch()
+
+
+def test_youtube_batch_transcript_validation_multiple_sources(client: Supadata) -> None:
+    """Test validation for transcript batch with multiple sources."""
+    with pytest.raises(SupadataError, match="Multiple sources"):
+        client.youtube.transcript.batch(video_ids=["vid1"], playlist_id="pl1")
+
+
+def test_youtube_batch_video(client: Supadata, requests_mock) -> None:
+    """Test creating a YouTube video metadata batch job."""
+    mock_response = {"jobId": "batch-video-job-456"}
+    requests_mock.post(f"{client.base_url}/youtube/video/batch", json=mock_response)
+
+    job = client.youtube.video.batch(playlist_id="pl123", limit=50)
+    assert isinstance(job, BatchJob)
+    assert job.job_id == "batch-video-job-456"
+
+
+def test_youtube_batch_video_validation_no_source(client: Supadata) -> None:
+    """Test validation for video batch without source."""
+    with pytest.raises(SupadataError, match="Missing source"):
+        client.youtube.video.batch()
+
+
+def test_youtube_batch_video_validation_multiple_sources(client: Supadata) -> None:
+    """Test validation for video batch with multiple sources."""
+    with pytest.raises(SupadataError, match="Multiple sources"):
+        client.youtube.video.batch(video_ids=["vid1"], channel_id="ch1")
+
+
+def test_youtube_get_batch_results_completed(client: Supadata, requests_mock) -> None:
+    """Test getting completed YouTube batch results."""
+    job_id = "batch-job-789"
+    mock_response = {
+        "status": "completed",
+        "results": [
+            {
+                "videoId": "vid1",
+                "transcript": {
+                    "content": "Transcript 1",
+                    "lang": "en",
+                    "availableLangs": ["en", "de"],
+                },
+            },
+            {"videoId": "vid2", "errorCode": "transcript-unavailable"},
+        ],
+        "stats": {"total": 2, "succeeded": 1, "failed": 1},
+        "completedAt": "2025-04-03T06:59:53.428Z",
+    }
+    requests_mock.get(f"{client.base_url}/youtube/batch/{job_id}", json=mock_response)
+
+    results = client.youtube.batch.get_batch_results(job_id=job_id)
+    assert isinstance(results, BatchResults)
+    assert results.status == "completed"
+    assert isinstance(results.stats, BatchStats)
+    assert results.stats.total == 2
+    assert results.stats.succeeded == 1
+    assert results.stats.failed == 1
+    assert isinstance(results.completed_at, datetime)
+    assert len(results.results) == 2
+    assert isinstance(results.results[0], BatchResultItem)
+    assert results.results[0].video_id == "vid1"
+    assert isinstance(results.results[0].transcript, Transcript)
+    assert results.results[0].transcript.content == "Transcript 1"
+    assert results.results[0].error_code is None
+    assert results.results[1].video_id == "vid2"
+    assert results.results[1].transcript is None
+    assert results.results[1].error_code == "transcript-unavailable"
+
+
+def test_youtube_get_batch_results_active(client: Supadata, requests_mock) -> None:
+    """Test getting active YouTube batch results."""
+    job_id = "batch-job-active"
+    mock_response = {"status": "active"}
+    requests_mock.get(f"{client.base_url}/youtube/batch/{job_id}", json=mock_response)
+
+    results = client.youtube.batch.get_batch_results(job_id=job_id)
+    assert isinstance(results, BatchResults)
+    assert results.status == "active"
+    assert results.results == []
+    assert results.stats is None
+    assert results.completed_at is None
+
+
+def test_youtube_get_batch_results_failed(client: Supadata, requests_mock) -> None:
+    """Test getting failed YouTube batch results."""
+    job_id = "batch-job-failed"
+    mock_response = {"status": "failed"}
+    requests_mock.get(f"{client.base_url}/youtube/batch/{job_id}", json=mock_response)
+
+    results = client.youtube.batch.get_batch_results(job_id=job_id)
+    assert isinstance(results, BatchResults)
+    assert results.status == "failed"

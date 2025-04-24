@@ -94,7 +94,32 @@ playlist_videos = supadata.youtube.playlist.videos(
 )
 print(f"Regular videos: {playlist_videos.video_ids}")
 print(f"Shorts: {playlist_videos.short_ids}")
-```
+
+# --- Batch Operations ---
+
+# Start a batch job to get transcripts for multiple videos
+# You can provide video IDs, a playlist ID, or a channel ID
+transcript_batch_job = supadata.youtube.transcript.batch(
+    video_ids=["dQw4w9WgXcQ", "xvFZjo5PgG0"],
+    # playlist_id="PLlaN88a7y2_plecYoJxvRFTLHVbIVAOoc", # alternatively
+    # channel_id="UC_9-kyTW8ZkZNDHQJ6FgpwQ", # alternatively
+    lang="en",  # Optional: specify preferred transcript language
+    limit=100   # Optional: limit for playlist/channel
+)
+print(f"Started transcript batch job: {transcript_batch_job.job_id}")
+
+# Start a batch job to get video metadata for a playlist
+video_batch_job = supadata.youtube.video.batch(
+    playlist_id="PLlaN88a7y2_plecYoJxvRFTLHVbIVAOoc",
+    limit=50
+)
+print(f"Started video metadata batch job: {video_batch_job.job_id}")
+
+# Get the results of a batch job (poll until status is 'completed' or 'failed')
+batch_results = supadata.youtube.batch.get_batch_results(job_id=transcript_batch_job.job_id)
+print(f"Job status: {batch_results.status}")
+print(f"Stats: {batch_results.stats.succeeded}/{batch_results.stats.total} videos processed")
+print(f"First result: {batch_results.results[0].video_id if batch_results.results else 'No results yet'}")
 
 ## Error Handling
 

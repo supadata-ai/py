@@ -564,7 +564,7 @@ def test_youtube_batch_transcript(client: Supadata, requests_mock) -> None:
         f"{client.base_url}/youtube/transcript/batch", json=mock_response
     )
 
-    job = client.youtube.transcript.batch(video_ids=["vid1", "vid2"], lang="en")
+    job = client.youtube.transcript.batch(video_ids=["vid1", "vid2"], lang="en", text=True)
     assert isinstance(job, BatchJob)
     assert job.job_id == "batch-transcript-job-123"
 

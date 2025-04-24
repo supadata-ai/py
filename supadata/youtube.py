@@ -82,40 +82,6 @@ class _Channel:
             short_ids=response.get("short_ids", [])
         )
 
-    def batch(
-        self,
-        video_ids: Optional[List[str]] = None,
-        playlist_id: Optional[str] = None,
-        channel_id: Optional[str] = None,
-        limit: Optional[int] = None,
-        lang: Optional[str] = None,
-    ) -> BatchJob:
-        """Create a batch job to get transcripts from videos sourced from this channel.
-
-        Note: This initiates a *transcript* batch job using the channel as a source.
-        One of video_ids, playlist_id, or channel_id must be provided, though
-        typically channel_id would be used here.
-
-        Args:
-            video_ids: Array of YouTube video IDs or URLs.
-            playlist_id: YouTube playlist URL or ID.
-            channel_id: YouTube channel URL, handle or ID.
-            limit: Maximum number of videos to process (default 10, max 5000).
-            lang: Preferred language code for transcripts (ISO 639-1).
-
-        Returns:
-            BatchJob object containing the job ID.
-
-        Raises:
-            SupadataError: If the API request fails or input validation fails.
-        """
-        return self._youtube._create_transcript_batch(
-            video_ids=video_ids,
-            playlist_id=playlist_id,
-            channel_id=channel_id,
-            limit=limit,
-            lang=lang
-        )
 
 
 class _Playlist:
@@ -331,6 +297,7 @@ class _Transcript:
         channel_id: Optional[str] = None,
         limit: Optional[int] = None,
         lang: Optional[str] = None,
+        text: Optional[bool] = None,
     ) -> BatchJob:
         """Create a batch job to get transcripts from multiple YouTube videos.
 
@@ -342,7 +309,7 @@ class _Transcript:
             channel_id: YouTube channel URL, handle or ID.
             limit: Maximum number of videos to process (default 10, max 5000).
             lang: Preferred language code for transcripts (ISO 639-1).
-
+            text: Return plain text instead of segments. Default False.
         Returns:
             BatchJob object containing the job ID.
 
@@ -354,7 +321,8 @@ class _Transcript:
             playlist_id=playlist_id,
             channel_id=channel_id,
             limit=limit,
-            lang=lang
+            lang=lang,
+            text=text
         )
 
 class _Batch:
@@ -468,12 +436,14 @@ class YouTube:
         return self._create_batch_job("/youtube/video/batch", payload)
 
     def _create_transcript_batch(
-        self, video_ids=None, playlist_id=None, channel_id=None, limit=None, lang=None
+        self, video_ids=None, playlist_id=None, channel_id=None, limit=None, lang=None, text=None
     ) -> BatchJob:
         """Create a batch job for transcripts."""
         payload = self._validate_batch_sources(video_ids, playlist_id, channel_id, limit)
         if lang:
             payload["lang"] = lang
+        if text:
+            payload["text"] = str(text).lower()
         return self._create_batch_job("/youtube/transcript/batch", payload)
 
     # --------------------------------------------------------------------------

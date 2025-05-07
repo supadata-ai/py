@@ -54,17 +54,17 @@ class _Channel:
         return YoutubeChannel(**response)
 
     def videos(
-        self, id: str, limit: Optional[int] = None, type: Literal["all", "video", "short"] = "all"
+        self, id: str, limit: Optional[int] = None, type: Literal["all", "video", "short", "live"] = "all"
     ) -> VideoIds:
         """Get video IDs from a YouTube channel.
 
         Args:
             id: YouTube Channel ID.
             limit: Max videos to return (default 30, max 5000).
-            type: Type of videos ('all', 'video', 'short'). Default 'all'.
+            type: Type of videos ('all', 'video', 'short', 'live'). Default 'all'.
 
         Returns:
-            VideoIds object containing lists of video IDs and short IDs.
+            VideoIds object containing lists of video IDs, short IDs, and live IDs.
 
         Raises:
             SupadataError: If the API request fails or limit is invalid.
@@ -79,7 +79,8 @@ class _Channel:
         )
         return VideoIds(
             video_ids=response.get("video_ids", []),
-            short_ids=response.get("short_ids", [])
+            short_ids=response.get("short_ids", []),
+            live_ids=response.get("live_ids", [])
         )
 
 
@@ -138,13 +139,16 @@ class _Playlist:
         query_params = {"id": id}
         if limit:
             query_params["limit"] = limit
+        if type:
+            query_params["type"] = type
 
         response: dict = self._youtube._request(
             "GET", "/youtube/playlist/videos", params=query_params
         )
         return VideoIds(
             video_ids=response.get("video_ids", []),
-            short_ids=response.get("short_ids", []) # Playlists can contain shorts
+            short_ids=response.get("short_ids", []),
+            live_ids=response.get("live_ids", [])
         )
 
 

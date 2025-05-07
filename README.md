@@ -15,7 +15,7 @@ pip install supadata
 
 ## Usage
 
-```python
+````python
 from supadata import Supadata, SupadataError
 
 # Initialize the client
@@ -77,11 +77,12 @@ print(f"Channel: {channel}")
 # Get video IDs from a YouTube channel
 channel_videos = supadata.youtube.channel.videos(
     id="RickAstleyVEVO",  # can be url, channel id, or handle
-    type="all",  # 'all', 'video', or 'short'
+    type="all",  # 'all', 'video', 'short', or 'live'
     limit=50
 )
 print(f"Regular videos: {channel_videos.video_ids}")
 print(f"Shorts: {channel_videos.short_ids}")
+print(f"Live: {channel_videos.live_ids}")
 
 # Get Playlist metadata
 playlist = supadata.youtube.playlist(id="PLlaN88a7y2_plecYoJxvRFTLHVbIVAOoc") # can be url or playlist id
@@ -94,6 +95,7 @@ playlist_videos = supadata.youtube.playlist.videos(
 )
 print(f"Regular videos: {playlist_videos.video_ids}")
 print(f"Shorts: {playlist_videos.short_ids}")
+print(f"Live: {playlist_videos.live_ids}")
 
 # --- Batch Operations ---
 
@@ -136,7 +138,7 @@ except SupadataError as error:
     print(f"Error details: {error.details}")
     if error.documentation_url:
         print(f"Documentation: {error.documentation_url}")
-```
+````
 
 ## API Reference
 

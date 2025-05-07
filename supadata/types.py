@@ -263,16 +263,20 @@ class VideoIds:
     Attributes:
         video_ids: List of regular YouTube video IDs
         short_ids: List of YouTube Shorts IDs
+        live_ids: List of YouTube Live IDs
     """
     
     video_ids: List[str] = None
     short_ids: List[str] = None
+    live_ids: List[str] = None
     
     def __post_init__(self):
         if self.video_ids is None:
             self.video_ids = []
         if self.short_ids is None:
             self.short_ids = []
+        if self.live_ids is None:
+            self.live_ids = []
 
 
 @dataclass

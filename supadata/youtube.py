@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional, Literal
 
 from .errors import SupadataError
-from .types import (
+from .custom_types import (
     Transcript,
     TranscriptChunk,
     TranslatedTranscript,

@@ -1,5 +1,5 @@
 from supadata.client import Supadata
-supadata = Supadata(api_key="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiIsImtpZCI6IjEifQ.eyJpc3MiOiJuYWRsZXMiLCJpYXQiOiIxNzQ5MTExNTQzIiwicHVycG9zZSI6ImFwaV9hdXRoZW50aWNhdGlvbiIsInN1YiI6IjM1NTliZGY3ZjZjNTQzNWI5YzQ1NzFlMDRjNDQ4YzUyIn0.LMdb4g6efiZalUsjh2u01cD5b57zdB7VDGfopHeeOAI")
+supadata = Supadata(api_key="your_api_key_here")
 
 web_content = supadata.web.scrape("https://openai.com/index/introducing-deep-research/")
 

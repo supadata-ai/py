@@ -1,6 +1,7 @@
 """Main Supadata client implementation."""
 
 from typing import Any, Dict
+import importlib.metadata
 
 import requests
 
@@ -25,49 +26,13 @@ class Supadata:
         self.session = requests.Session()
         self.session.headers.update({
             "x-api-key": api_key,
-            "Accept": "application/json"
+            "Accept": "application/json",
+            "User-Agent": f"Supadata-Python-SDK/{importlib.metadata.version('supadata')}"
         })
 
         # Initialize namespaces
         self.youtube = YouTube(self._request)
         self.web = Web(self._request)
-
-    def _handle_gateway_error(self, status_code: int, error_text: str) -> None:
-        """Handle gateway-specific error responses.
-        
-        Args:
-            status_code: HTTP status code
-            error_text: Error message from the gateway
-            
-        Raises:
-            SupadataError: With appropriate error details
-        """
-
-        try:
-            import json
-            error_json = json.loads(error_text)
-            error_message = error_json.get('message', '')
-        except (ValueError, AttributeError):
-            error_message = ''
-
-        if status_code == 403:
-            raise SupadataError(
-                error="invalid-request",
-                message="Invalid or missing API key",
-                details=error_message or "Please ensure you have provided a valid API key"
-            )
-        elif status_code == 404:
-            raise SupadataError(
-                error="not-found",
-                message="Endpoint does not exist or resource not found",
-                details=error_message or "The API endpoint you are trying to access does not exist"
-            )
-        elif status_code == 429:
-            raise SupadataError(
-                error="limit-exceeded",
-                message="Limit exceeded",
-                details=error_message or "You have exceeded the allowed request rate or quota limits"
-            )
 
     def _camel_to_snake(self, d: Dict[str, Any]) -> Dict[str, Any]:
         """Convert dictionary keys from camelCase to snake_case."""
@@ -99,10 +64,6 @@ class Supadata:
         """
         url = f"{self.base_url}{path}"
         response = self.session.request(method, url, **kwargs)
-
-        # Handle gateway-specific status codes
-        if response.status_code in (403, 404, 429):
-            self._handle_gateway_error(response.status_code, response.text)
 
         # Treat 206 Partial Content as an error for transcript endpoints
         if response.status_code == 206 and ('/transcript' in path):

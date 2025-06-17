@@ -224,57 +224,6 @@ def test_get_crawl_results_failed(client: Supadata, requests_mock) -> None:
         client.web.get_crawl_results(job_id=job_id)
 
 
-def test_gateway_error_403(client: Supadata, requests_mock) -> None:
-    """Test handling of 403 gateway error."""
-    requests_mock.get(
-        f"{client.base_url}/youtube/transcript",
-        status_code=403,
-        text="Please ensure you have provided a valid API key",
-    )
-
-    with pytest.raises(SupadataError) as exc_info:
-        client.youtube.transcript(video_id="test123")
-
-    error = exc_info.value
-    assert error.error == "invalid-request"
-    assert error.message == "Invalid or missing API key"
-    assert error.details == "Please ensure you have provided a valid API key"
-
-
-def test_gateway_error_404(client: Supadata, requests_mock) -> None:
-    """Test handling of 404 gateway error."""
-    requests_mock.get(
-        f"{client.base_url}/invalid/endpoint",
-        status_code=404,
-        text="The API endpoint you are trying to access does not exist",
-    )
-
-    with pytest.raises(SupadataError) as exc_info:
-        client._request("GET", "/invalid/endpoint")
-
-    error = exc_info.value
-    assert error.error == "not-found"
-    assert error.message == "Endpoint does not exist or resource not found"
-    assert error.details == "The API endpoint you are trying to access does not exist"
-
-
-def test_gateway_error_429(client: Supadata, requests_mock) -> None:
-    """Test handling of 429 gateway error."""
-    requests_mock.get(
-        f"{client.base_url}/youtube/transcript",
-        status_code=429,
-        text="You have exceeded the allowed request rate or quota limits",
-    )
-
-    with pytest.raises(SupadataError) as exc_info:
-        client.youtube.transcript(video_id="test123")
-
-    error = exc_info.value
-    assert error.error == "limit-exceeded"
-    assert error.message == "Limit exceeded"
-    assert error.details == "You have exceeded the allowed request rate or quota limits"
-
-
 def test_youtube_video(client: Supadata, requests_mock) -> None:
     video_id = "pEfrdAtAmqk"
     mock_response = {
@@ -313,6 +262,7 @@ def test_youtube_video_invalid_id(client: Supadata, requests_mock) -> None:
     mock_response = {
         "error": "not-found",
         "message": "The requested item could not be found",
+        "details": "The requested item could not be found.",
     }
     requests_mock.get(
         f"{client.base_url}/youtube/video?id={video_id}",
@@ -325,8 +275,8 @@ def test_youtube_video_invalid_id(client: Supadata, requests_mock) -> None:
 
     error = exc_info.value
     assert error.error == "not-found"
-    assert error.message == "Endpoint does not exist or resource not found"
-    assert error.details == "The requested item could not be found"
+    assert error.message == "The requested item could not be found"
+    assert error.details == "The requested item could not be found."
 
 
 def test_youtube_channel(client: Supadata, requests_mock) -> None:
@@ -375,8 +325,8 @@ def test_youtube_channel_invalid_id(client: Supadata, requests_mock) -> None:
 
     error = exc_info.value
     assert error.error == "not-found"
-    assert error.message == "Endpoint does not exist or resource not found"
-    assert error.details == "The requested item could not be found"
+    assert error.message == "The requested item could not be found"
+    assert error.details == "The requested item could not be found."
 
 
 def test_youtube_playlist(client: Supadata, requests_mock) -> None:
@@ -423,8 +373,8 @@ def test_youtube_playlist_invalid_id(client: Supadata, requests_mock) -> None:
 
     error = exc_info.value
     assert error.error == "not-found"
-    assert error.message == "Endpoint does not exist or resource not found"
-    assert error.details == "The requested item could not be found"
+    assert error.message == "The requested item could not be found"
+    assert error.details == "The requested item could not be found."
 
 
 def test_youtube_channel_videos(client: Supadata, requests_mock) -> None:
@@ -515,8 +465,8 @@ def test_youtube_channel_videos_invalid_id(client: Supadata, requests_mock) -> N
 
     error = exc_info.value
     assert error.error == "not-found"
-    assert error.message == "Endpoint does not exist or resource not found"
-    assert error.details == "The requested item could not be found"
+    assert error.message == "The requested item could not be found"
+    assert error.details == "The requested item could not be found."
 
 
 def test_youtube_playlist_videos(client: Supadata, requests_mock) -> None:
@@ -577,8 +527,8 @@ def test_youtube_playlist_videos_invalid_id(client: Supadata, requests_mock) -> 
 
     error = exc_info.value
     assert error.error == "not-found"
-    assert error.message == "Endpoint does not exist or resource not found"
-    assert error.details == "The requested item could not be found"
+    assert error.message == "The requested item could not be found"
+    assert error.details == "The requested item could not be found."
 
 
 # --- Batch Tests ---

@@ -1,6 +1,6 @@
 """Web-related operations for Supadata."""
 
-from .types import Scrape, Map, CrawlJob, CrawlResponse, CrawlPage
+from .custom_types import Scrape, Map, CrawlJob, CrawlResponse, CrawlPage
 from .errors import SupadataError
 from typing import Optional, List, Dict, Union
 

@@ -8,7 +8,7 @@ from importlib.metadata import version
 
 from supadata.client import Supadata
 from supadata.errors import SupadataError
-from supadata.types import (
+from supadata.custom_types import (
     CrawlJob,
     CrawlPage,
     CrawlResponse,

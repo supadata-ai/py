@@ -642,3 +642,125 @@ def test_youtube_get_batch_results_failed(client: Supadata, requests_mock) -> No
     results = client.youtube.batch.get_batch_results(job_id=job_id)
     assert isinstance(results, BatchResults)
     assert results.status == "failed"
+
+
+# --- Universal Transcript Tests ---
+
+def test_transcript_immediate_chunks(client: Supadata, requests_mock) -> None:
+    """Test getting transcript with immediate response as chunks."""
+    url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    mock_response = {
+        "content": [{"text": "Never gonna give you up", "offset": 0, "duration": 2000, "lang": "en"}],
+        "lang": "en",
+        "availableLangs": ["en", "es"],
+    }
+    requests_mock.get(f"{client.base_url}/transcript", json=mock_response)
+
+    transcript = client.transcript(url=url)
+    assert isinstance(transcript, Transcript)
+    assert isinstance(transcript.content[0], TranscriptChunk)
+    assert transcript.content[0].text == "Never gonna give you up"
+    assert transcript.lang == "en"
+    assert transcript.available_langs == ["en", "es"]
+
+
+def test_transcript_immediate_text(client: Supadata, requests_mock) -> None:
+    """Test getting transcript with immediate response as plain text."""
+    url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    mock_response = {
+        "content": "Never gonna give you up, never gonna let you down",
+        "lang": "en",
+        "availableLangs": ["en", "es"],
+    }
+    requests_mock.get(f"{client.base_url}/transcript", json=mock_response)
+
+    transcript = client.transcript(url=url, text=True)
+    assert isinstance(transcript, Transcript)
+    assert isinstance(transcript.content, str)
+    assert transcript.content == "Never gonna give you up, never gonna let you down"
+    assert transcript.lang == "en"
+
+
+def test_transcript_async_job(client: Supadata, requests_mock) -> None:
+    """Test getting transcript that returns a job ID for async processing."""
+    url = "https://www.tiktok.com/@user/video/123456789"
+    mock_response = {"jobId": "transcript-job-456"}
+    requests_mock.get(f"{client.base_url}/transcript", json=mock_response)
+
+    result = client.transcript(url=url)
+    assert isinstance(result, BatchJob)
+    assert result.job_id == "transcript-job-456"
+
+
+def test_transcript_with_language(client: Supadata, requests_mock) -> None:
+    """Test transcript with specific language preference."""
+    url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    mock_response = {
+        "content": "Nunca te voy a abandonar",
+        "lang": "es",
+        "availableLangs": ["en", "es"],
+    }
+    requests_mock.get(f"{client.base_url}/transcript", json=mock_response)
+
+    transcript = client.transcript(url=url, lang="es", text=True)
+    assert isinstance(transcript, Transcript)
+    assert transcript.content == "Nunca te voy a abandonar"
+    assert transcript.lang == "es"
+
+
+def test_transcript_with_chunk_size(client: Supadata, requests_mock) -> None:
+    """Test transcript with chunk size parameter."""
+    url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    mock_response = {
+        "content": [
+            {"text": "Never gonna", "offset": 0, "duration": 1000, "lang": "en"},
+            {"text": "give you up", "offset": 1000, "duration": 1000, "lang": "en"}
+        ],
+        "lang": "en",
+        "availableLangs": ["en"],
+    }
+    requests_mock.get(f"{client.base_url}/transcript", json=mock_response)
+
+    transcript = client.transcript(url=url, chunk_size=100)
+    assert isinstance(transcript, Transcript)
+    assert len(transcript.content) == 2
+    assert transcript.content[0].text == "Never gonna"
+    assert transcript.content[1].text == "give you up"
+
+
+def test_transcript_with_mode(client: Supadata, requests_mock) -> None:
+    """Test transcript with different mode parameter."""
+    url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    mock_response = {
+        "content": "Generated transcript content",
+        "lang": "en",
+        "availableLangs": ["en"],
+    }
+    requests_mock.get(f"{client.base_url}/transcript", json=mock_response)
+
+    transcript = client.transcript(url=url, mode="generate", text=True)
+    assert isinstance(transcript, Transcript)
+    assert transcript.content == "Generated transcript content"
+
+
+def test_transcript_error_handling(client: Supadata, requests_mock) -> None:
+    """Test transcript error handling."""
+    url = "https://invalid-url.com"
+    error_response = {
+        "error": "unsupported-platform",
+        "message": "Unsupported Platform", 
+        "details": "The specified platform is not supported",
+    }
+    requests_mock.get(
+        f"{client.base_url}/transcript",
+        status_code=400,
+        json=error_response,
+    )
+
+    with pytest.raises(SupadataError) as exc_info:
+        client.transcript(url=url)
+
+    error = exc_info.value
+    assert error.error == "unsupported-platform"
+    assert error.message == "Unsupported Platform"
+    assert error.details == "The specified platform is not supported"

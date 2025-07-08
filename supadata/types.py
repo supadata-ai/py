@@ -41,6 +41,12 @@ class Transcript:
             self.content = []
         if self.available_langs is None:
             self.available_langs = []
+        # Convert list of dictionaries to TranscriptChunk objects
+        if isinstance(self.content, list):
+            self.content = [
+                chunk if isinstance(chunk, TranscriptChunk) else TranscriptChunk(**chunk)
+                for chunk in self.content
+            ]
 
 
 @dataclass

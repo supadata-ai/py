@@ -1,6 +1,6 @@
 """Main Supadata client implementation."""
 
-from typing import Any, Dict
+from typing import Any, Dict, Union
 import importlib.metadata
 
 import requests
@@ -9,6 +9,7 @@ from supadata.errors import SupadataError
 
 from .web import Web
 from .youtube import YouTube
+from .types import Transcript, BatchJob
 
 
 class Supadata:
@@ -33,6 +34,48 @@ class Supadata:
         # Initialize namespaces
         self.youtube = YouTube(self._request)
         self.web = Web(self._request)
+
+    def transcript(
+        self,
+        url: str,
+        lang: str = None,
+        text: bool = False,
+        chunk_size: int = None,
+        mode: str = "auto"
+    ) -> Union[Transcript, BatchJob]:
+        """Get transcript from a video URL.
+
+        Args:
+            url: Video URL from supported platforms (YouTube, TikTok, Twitter) or file URL
+            lang: Optional preferred language code (ISO 639-1)
+            text: Return plain text transcript instead of timestamped chunks
+            chunk_size: Maximum characters per transcript chunk
+            mode: Transcript retrieval mode - "native", "auto", or "generate"
+
+        Returns:
+            Transcript object if transcript is available immediately,
+            or BatchJob with job_id for asynchronous processing
+
+        Raises:
+            SupadataError: If the transcript request fails
+        """
+        params = {"url": url, "mode": mode}
+        
+        if lang is not None:
+            params["lang"] = lang
+        if text:
+            params["text"] = str(text).lower()
+        if chunk_size is not None:
+            params["chunkSize"] = chunk_size
+
+        response = self._request("GET", "/transcript", params=params)
+        
+        # Check if response contains a job_id (async processing)
+        if "job_id" in response:
+            return BatchJob(job_id=response["job_id"])
+        
+        # Otherwise, return the transcript directly
+        return Transcript(**response)
 
     def _camel_to_snake(self, d: Dict[str, Any]) -> Dict[str, Any]:
         """Convert dictionary keys from camelCase to snake_case."""

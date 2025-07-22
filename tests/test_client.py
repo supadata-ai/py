@@ -764,3 +764,28 @@ def test_transcript_error_handling(client: Supadata, requests_mock) -> None:
     assert error.error == "unsupported-platform"
     assert error.message == "Unsupported Platform"
     assert error.details == "The specified platform is not supported"
+
+
+def test_youtube_transcript_206_error_handling(client: Supadata, requests_mock) -> None:
+    """Test YouTube transcript 206 response error handling."""
+    video_id = "6ciqyBnXIKQ"
+    error_response = {
+        "error": "transcript-unavailable",
+        "message": "Transcript Unavailable",
+        "details": "No transcript is available for this video",
+        "documentationUrl": "https://supadata.ai/documentation/errors/transcript-unavailable"
+    }
+    requests_mock.get(
+        f"{client.base_url}/youtube/transcript",
+        status_code=206,
+        json=error_response,
+    )
+
+    with pytest.raises(SupadataError) as exc_info:
+        client.youtube.transcript(video_id=video_id)
+
+    error = exc_info.value
+    assert error.error == "transcript-unavailable"
+    assert error.message == "Transcript Unavailable"
+    assert error.details == "No transcript is available for this video"
+    assert error.documentation_url == "https://supadata.ai/documentation/errors/transcript-unavailable"

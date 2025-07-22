@@ -112,7 +112,7 @@ class Supadata:
         if response.status_code == 206 and ('/transcript' in path):
             error_data = self._camel_to_snake(response.json())
             if 'error' in error_data:
-                raise SupadataError(**error_data['error'])
+                raise SupadataError(**error_data)
             raise SupadataError(error="transcript-unavailable", message="No Transcript", details="No transcript available")
 
         try:

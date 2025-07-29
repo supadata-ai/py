@@ -27,7 +27,7 @@ supadata = Supadata(api_key="YOUR_API_KEY")
 ### Transcripts
 
 ```python
-# Get transcript from any supported platform (YouTube, TikTok, Twitter, file URLs)
+# Get transcript from any supported platform (YouTube, TikTok, Instagram,Twitter, file URLs)
 transcript = supadata.transcript(
     url="https://x.com/SpaceX/status/1481651037291225113",
     lang="en",  # Optional: preferred language

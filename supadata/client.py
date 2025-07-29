@@ -46,7 +46,7 @@ class Supadata:
         """Get transcript from a video URL.
 
         Args:
-            url: Video URL from supported platforms (YouTube, TikTok, Twitter) or file URL
+            url: Video URL from supported platforms (YouTube, TikTok, Instagram, Twitter) or file URL
             lang: Optional preferred language code (ISO 639-1)
             text: Return plain text transcript instead of timestamped chunks
             chunk_size: Maximum characters per transcript chunk

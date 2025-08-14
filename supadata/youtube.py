@@ -446,8 +446,8 @@ class YouTube:
         payload = self._validate_batch_sources(video_ids, playlist_id, channel_id, limit)
         if lang:
             payload["lang"] = lang
-        if text:
-            payload["text"] = str(text).lower()
+        if text is not None:
+            payload["text"] = text
         return self._create_batch_job("/youtube/transcript/batch", payload)
 
     # --------------------------------------------------------------------------

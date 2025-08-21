@@ -14,6 +14,7 @@ from .types import (
     VideoIds,
     BatchJob,
     BatchResults,
+    YoutubeSearchResponse,
 )
 
 # Forward declare YouTube for type hints in private classes
@@ -456,6 +457,63 @@ class YouTube:
 
     # Note: video() and transcript() direct calls are implicitly handled
     # by the __call__ methods of the objects returned by the properties.
+
+    def search(
+        self,
+        query: str,
+        upload_date: Literal["all", "hour", "today", "week", "month", "year"] = "all",
+        type: Literal["all", "video", "channel", "playlist", "movie"] = "all",
+        duration: Literal["all", "short", "medium", "long"] = "all",
+        sort_by: Literal["relevance", "rating", "date", "views"] = "relevance",
+        features: Optional[List[Literal["hd", "subtitles", "creative-commons", "3d", "live", "4k", "360", "location", "hdr", "vr180"]]] = None,
+        limit: Optional[int] = None,
+    ) -> YoutubeSearchResponse:
+        """Search for YouTube videos.
+
+        Args:
+            query: Search query string (minimum 1 character)
+            upload_date: Filter by upload date. Default "all"
+            type: Filter by content type. Default "all"
+            duration: Filter by duration. Default "all"
+            sort_by: Sort results by criteria. Default "relevance"
+            features: List of video features to filter by
+            limit: Number of results to return (1-5000). Enables automatic pagination
+
+        Returns:
+            YoutubeSearchResponse object containing search results
+
+        Raises:
+            SupadataError: If the API request fails or parameters are invalid
+        """
+        if not query or len(query.strip()) < 1:
+            raise SupadataError(
+                error="invalid-request",
+                message="Query is required",
+                details="Search query must be at least 1 character long"
+            )
+
+        params = {
+            "query": query,
+            "uploadDate": upload_date,
+            "type": type,
+            "duration": duration,
+            "sortBy": sort_by,
+        }
+
+        if features:
+            params["features"] = features
+
+        if limit is not None:
+            if not isinstance(limit, int) or limit < 1 or limit > 5000:
+                raise SupadataError(
+                    error="invalid-request",
+                    message="Invalid limit",
+                    details="Limit must be between 1 and 5000"
+                )
+            params["limit"] = limit
+
+        response = self._request("GET", "/youtube/search", params=params)
+        return YoutubeSearchResponse(**response)
 
     def translate(
         self, video_id: str, lang: str, text: bool = False

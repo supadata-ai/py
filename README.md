@@ -97,6 +97,25 @@ print(f"Regular videos: {playlist_videos.video_ids}")
 print(f"Shorts: {playlist_videos.short_ids}")
 print(f"Live: {playlist_videos.live_ids}")
 
+# Search YouTube videos
+search_results = supadata.youtube.search(
+    query="Never Gonna Give You Up",
+    upload_date="all",  # "all", "hour", "today", "week", "month", "year"
+    type="video",       # "all", "video", "channel", "playlist", "movie"
+    duration="all",     # "all", "short", "medium", "long"
+    sort_by="relevance", # "relevance", "rating", "date", "views"
+    features=["hd", "subtitles"],  # Optional: filter by video features
+    limit=10            # Optional: number of results (1-5000)
+)
+print(f"Found {search_results.total_results} total results")
+print(f"Query: {search_results.query}")
+for result in search_results.results:
+    print(f"Video: {result.title} by {result.channel['name']}")
+    print(f"  ID: {result.id}")
+    print(f"  Duration: {result.duration}s")
+    print(f"  Views: {result.view_count}")
+
+
 # Batch Operations
 transcript_batch_job = supadata.youtube.transcript.batch(
     video_ids=["dQw4w9WgXcQ", "xvFZjo5PgG0"],

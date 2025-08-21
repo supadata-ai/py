@@ -20,6 +20,8 @@ from supadata.types import (
     YoutubeChannel,
     YoutubePlaylist,
     YoutubeVideo,
+    YoutubeSearchResponse,
+    YoutubeSearchResult,
 )
 
 __version__ = version("supadata")
@@ -37,4 +39,6 @@ __all__ = [
     "YoutubeChannel",
     "YoutubePlaylist",
     "YoutubeVideo",
+    "YoutubeSearchResponse",
+    "YoutubeSearchResult",
 ]

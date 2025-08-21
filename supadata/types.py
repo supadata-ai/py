@@ -392,3 +392,64 @@ class BatchResults:
         # Process stats into BatchStats object
         if isinstance(self.stats, dict):
             self.stats = BatchStats(**self.stats)
+
+
+@dataclass
+class YoutubeSearchResult:
+    """A single YouTube search result.
+    
+    Attributes:
+        id: YouTube video ID
+        title: Video title
+        thumbnail: Video thumbnail URL
+        duration: Duration in seconds
+        view_count: Number of views
+        upload_date: When the video was uploaded
+        channel: Channel information
+        description: Video description
+    """
+    
+    id: str
+    title: str = ""
+    thumbnail: str = ""
+    duration: int = 0
+    view_count: int = 0
+    upload_date: Optional[datetime] = None
+    channel: YoutubeChannelBaseDict = None
+    description: str = ""
+    
+    def __post_init__(self):
+        if self.channel is None:
+            self.channel = YoutubeChannelBaseDict(id="", name="")
+        # Parse upload_date if it's a string
+        if isinstance(self.upload_date, str):
+            try:
+                self.upload_date = datetime.fromisoformat(self.upload_date.replace('Z', '+00:00'))
+            except ValueError:
+                self.upload_date = None
+
+
+@dataclass
+class YoutubeSearchResponse:
+    """Response from YouTube search endpoint.
+    
+    Attributes:
+        query: The search query used
+        results: List of search results
+        total_results: Estimated total number of results
+    """
+    
+    query: str
+    results: List[YoutubeSearchResult] = field(default_factory=list)
+    total_results: int = 0
+    
+    def __post_init__(self):
+        # Process results into YoutubeSearchResult objects
+        processed_results = []
+        if isinstance(self.results, list):
+            for item in self.results:
+                if isinstance(item, dict):
+                    processed_results.append(YoutubeSearchResult(**item))
+                elif isinstance(item, YoutubeSearchResult):
+                    processed_results.append(item)
+        self.results = processed_results

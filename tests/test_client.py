@@ -23,6 +23,8 @@ from supadata.types import (
     BatchResultItem,
     BatchResults,
     BatchStats,
+    YoutubeSearchResponse,
+    YoutubeSearchResult,
 )
 
 
@@ -789,3 +791,122 @@ def test_youtube_transcript_206_error_handling(client: Supadata, requests_mock) 
     assert error.message == "Transcript Unavailable"
     assert error.details == "No transcript is available for this video"
     assert error.documentation_url == "https://supadata.ai/documentation/errors/transcript-unavailable"
+
+
+# --- YouTube Search Tests ---
+
+def test_youtube_search_basic(client: Supadata, requests_mock) -> None:
+    """Test basic YouTube search functionality."""
+    query = "Never Gonna Give You Up"
+    mock_response = {
+        "query": query,
+        "results": [
+            {
+                "id": "dQw4w9WgXcQ",
+                "title": "Rick Astley - Never Gonna Give You Up (Official Video)",
+                "thumbnail": "https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
+                "duration": 212,
+                "viewCount": 1500000000,
+                "uploadDate": "2009-10-25T00:00:00.000Z",
+                "channel": {"id": "UCuAXFkgsw1L7xaCfnd5JJOw", "name": "Rick Astley"},
+                "description": "The official video for \"Never Gonna Give You Up\" by Rick Astley"
+            }
+        ],
+        "totalResults": 1000000
+    }
+    requests_mock.get(f"{client.base_url}/youtube/search", json=mock_response)
+
+    search_response = client.youtube.search(query=query)
+    assert isinstance(search_response, YoutubeSearchResponse)
+    assert search_response.query == query
+    assert search_response.total_results == 1000000
+    assert len(search_response.results) == 1
+    
+    result = search_response.results[0]
+    assert isinstance(result, YoutubeSearchResult)
+    assert result.id == "dQw4w9WgXcQ"
+    assert result.title == "Rick Astley - Never Gonna Give You Up (Official Video)"
+    assert result.duration == 212
+    assert result.view_count == 1500000000
+    assert result.channel["name"] == "Rick Astley"
+
+
+def test_youtube_search_with_filters(client: Supadata, requests_mock) -> None:
+    """Test YouTube search with various filters."""
+    query = "Python tutorial"
+    mock_response = {
+        "query": query,
+        "results": [
+            {
+                "id": "abc123def",
+                "title": "Python Tutorial for Beginners",
+                "thumbnail": "https://i.ytimg.com/vi/abc123def/maxresdefault.jpg",
+                "duration": 3600,
+                "viewCount": 500000,
+                "uploadDate": "2024-01-15T00:00:00.000Z",
+                "channel": {"id": "UCchannel123", "name": "Python Academy"},
+                "description": "Complete Python tutorial for beginners"
+            }
+        ],
+        "totalResults": 50000
+    }
+    requests_mock.get(f"{client.base_url}/youtube/search", json=mock_response)
+
+    search_response = client.youtube.search(
+        query=query,
+        upload_date="week",
+        type="video", 
+        duration="long",
+        sort_by="views",
+        features=["hd", "subtitles"],
+        limit=10
+    )
+    
+    assert isinstance(search_response, YoutubeSearchResponse)
+    assert search_response.query == query
+    assert search_response.total_results == 50000
+    assert len(search_response.results) == 1
+
+
+
+def test_youtube_search_empty_query_error(client: Supadata) -> None:
+    """Test YouTube search with empty query raises error."""
+    with pytest.raises(SupadataError) as exc_info:
+        client.youtube.search(query="")
+    
+    error = exc_info.value
+    assert error.error == "invalid-request"
+    assert "Query is required" in error.message
+
+
+def test_youtube_search_invalid_limit_error(client: Supadata) -> None:
+    """Test YouTube search with invalid limit raises error."""
+    with pytest.raises(SupadataError) as exc_info:
+        client.youtube.search(query="test", limit=6000)
+    
+    error = exc_info.value
+    assert error.error == "invalid-request"
+    assert "Invalid limit" in error.message
+
+
+def test_youtube_search_api_error(client: Supadata, requests_mock) -> None:
+    """Test YouTube search API error handling."""
+    query = "test query"
+    error_response = {
+        "error": "rate-limit-exceeded",
+        "message": "Rate limit exceeded",
+        "details": "Too many requests per minute"
+    }
+    requests_mock.get(
+        f"{client.base_url}/youtube/search",
+        status_code=429,
+        json=error_response
+    )
+
+    with pytest.raises(SupadataError) as exc_info:
+        client.youtube.search(query=query)
+    
+    error = exc_info.value
+    assert error.error == "rate-limit-exceeded"
+    assert error.message == "Rate limit exceeded"
+    assert error.details == "Too many requests per minute"

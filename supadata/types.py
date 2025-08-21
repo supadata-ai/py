@@ -5,6 +5,18 @@ from datetime import datetime
 from typing import List, Optional, TypedDict, Union
 
 
+def filter_dict_for_dataclass(data: dict, dataclass_type) -> dict:
+    """Filter dictionary to only include fields that exist in the target dataclass.
+    
+    This prevents crashes when API responses include new fields not yet defined in our types.
+    """
+    if not hasattr(dataclass_type, '__dataclass_fields__'):
+        return data
+    
+    known_fields = set(dataclass_type.__dataclass_fields__.keys())
+    return {k: v for k, v in data.items() if k in known_fields}
+
+
 @dataclass
 class TranscriptChunk:
     """A chunk of a video transcript.
@@ -407,6 +419,7 @@ class YoutubeSearchResult:
         upload_date: When the video was uploaded
         channel: Channel information
         description: Video description
+        type: Type of result (video, channel, playlist, etc.)
     """
     
     id: str
@@ -417,6 +430,7 @@ class YoutubeSearchResult:
     upload_date: Optional[datetime] = None
     channel: YoutubeChannelBaseDict = None
     description: str = ""
+    type: str = ""
     
     def __post_init__(self):
         if self.channel is None:
@@ -449,7 +463,8 @@ class YoutubeSearchResponse:
         if isinstance(self.results, list):
             for item in self.results:
                 if isinstance(item, dict):
-                    processed_results.append(YoutubeSearchResult(**item))
+                    filtered_item = filter_dict_for_dataclass(item, YoutubeSearchResult)
+                    processed_results.append(YoutubeSearchResult(**filtered_item))
                 elif isinstance(item, YoutubeSearchResult):
                     processed_results.append(item)
         self.results = processed_results

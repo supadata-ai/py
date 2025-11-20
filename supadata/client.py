@@ -9,7 +9,7 @@ from supadata.errors import SupadataError
 
 from .web import Web
 from .youtube import YouTube
-from .types import Transcript, BatchJob
+from .types import Transcript, BatchJob, Metadata
 
 
 class Supadata:
@@ -34,6 +34,21 @@ class Supadata:
         # Initialize namespaces
         self.youtube = YouTube(self._request)
         self.web = Web(self._request)
+
+    def metadata(self, url: str) -> Metadata:
+        """Get metadata from a media URL.
+
+        Args:
+            url: Media URL from supported platforms (YouTube, TikTok, Instagram, Twitter)
+
+        Returns:
+            Metadata object containing media information
+
+        Raises:
+            SupadataError: If the metadata request fails
+        """
+        response = self._request("GET", "/metadata", params={"url": url})
+        return Metadata(**response)
 
     def transcript(
         self,
@@ -60,7 +75,7 @@ class Supadata:
             SupadataError: If the transcript request fails
         """
         params = {"url": url, "mode": mode}
-        
+
         if lang is not None:
             params["lang"] = lang
         if text:
@@ -69,11 +84,11 @@ class Supadata:
             params["chunkSize"] = chunk_size
 
         response = self._request("GET", "/transcript", params=params)
-        
+
         # Check if response contains a job_id (async processing)
         if "job_id" in response:
             return BatchJob(job_id=response["job_id"])
-        
+
         # Otherwise, return the transcript directly
         return Transcript(**response)
 

@@ -24,10 +24,18 @@ from supadata import Supadata, SupadataError
 supadata = Supadata(api_key="YOUR_API_KEY")
 ```
 
+### Metadata
+
+```python
+# Get media metadata from any supported platform (YouTube, TikTok, Instagram, Twitter)
+metadata = supadata.metadata(url="https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+print(metadata)
+```
+
 ### Transcripts
 
 ```python
-# Get transcript from any supported platform (YouTube, TikTok, Instagram,Twitter, file URLs)
+# Get transcript from any supported platform (YouTube, TikTok, Instagram, Twitter, file URLs)
 transcript = supadata.transcript(
     url="https://x.com/SpaceX/status/1481651037291225113",
     lang="en",  # Optional: preferred language
@@ -48,27 +56,12 @@ else:
 ### YouTube
 
 ```python
-# Get YouTube transcript with Spanish language preference
-transcript = supadata.youtube.transcript(video_id="dQw4w9WgXcQ", lang="es")
-print(f"Got transcript {transcript.content}")
-
 # Translate YouTube transcript to Spanish
 translated = supadata.youtube.translate(
     video_id="dQw4w9WgXcQ",
     lang="es"
 )
 print(f"Got translated transcript in {translated.lang}")
-
-# Get plain text transcript
-text_transcript = supadata.youtube.transcript(
-    video_id="dQw4w9WgXcQ",
-    text=True
-)
-print(text_transcript.content)
-
-# Get Video Metadata
-video = supadata.youtube.video(id="https://youtu.be/dQw4w9WgXcQ") # can be url or video id
-print(f"Video: {video}")
 
 # Get Channel Metadata
 channel = supadata.youtube.channel(id="https://youtube.com/@RickAstleyVEVO") # can be url, channel id, handle
@@ -179,7 +172,7 @@ The SDK uses custom `SupadataError` exceptions that provide structured error inf
 from supadata.errors import SupadataError
 
 try:
-    transcript = supadata.youtube.transcript(video_id="INVALID_ID")
+    metadata = supadata.metadata(url="https://www.youtube.com/watch?v=INVALID_ID")
 except SupadataError as error:
     print(f"Error code: {error.error}")
     print(f"Error message: {error.message}")

@@ -8,6 +8,10 @@ from supadata import (
     CrawlJob,
     CrawlPage,
     Map,
+    Metadata,
+    MetadataAuthor,
+    MetadataStats,
+    MetadataMedia,
     Scrape,
     Supadata,
     Transcript,
@@ -55,16 +59,16 @@ def test_client_initialization(api_key: str, base_url: str) -> None:
 
 
 def test_get_transcript_chunks(client: Supadata, requests_mock) -> None:
-    """Test getting YouTube transcript with chunks."""
-    video_id = "test123"
+    """Test getting transcript with chunks using universal endpoint."""
+    url = "https://www.youtube.com/watch?v=test123"
     mock_response = {
         "content": [{"text": "Hello", "offset": 0, "duration": 1000, "lang": "en"}],
         "lang": "en",
         "availableLangs": ["en", "es"],
     }
-    requests_mock.get(f"{client.base_url}/youtube/transcript", json=mock_response)
+    requests_mock.get(f"{client.base_url}/transcript", json=mock_response)
 
-    transcript = client.youtube.transcript(video_id=video_id)
+    transcript = client.transcript(url=url)
     assert isinstance(transcript, Transcript)
     assert isinstance(transcript.content[0], TranscriptChunk)
     assert transcript.content[0].text == "Hello"
@@ -73,16 +77,16 @@ def test_get_transcript_chunks(client: Supadata, requests_mock) -> None:
 
 
 def test_get_transcript_text(client: Supadata, requests_mock) -> None:
-    """Test getting YouTube transcript as plain text."""
-    video_id = "test123"
+    """Test getting transcript as plain text using universal endpoint."""
+    url = "https://www.youtube.com/watch?v=test123"
     mock_response = {
         "content": "Hello, this is a test transcript",
         "lang": "en",
         "availableLangs": ["en", "es"],
     }
-    requests_mock.get(f"{client.base_url}/youtube/transcript", json=mock_response)
+    requests_mock.get(f"{client.base_url}/transcript", json=mock_response)
 
-    transcript = client.youtube.transcript(video_id=video_id, text=True)
+    transcript = client.transcript(url=url, text=True)
     assert isinstance(transcript, Transcript)
     assert isinstance(transcript.content, str)
     assert transcript.content == "Hello, this is a test transcript"
@@ -137,7 +141,7 @@ def test_map(client: Supadata, requests_mock) -> None:
 
 def test_error_handling(client: Supadata, requests_mock) -> None:
     """Test error handling for JSON API errors."""
-    video_id = "invalid"
+    url = "https://www.youtube.com/watch?v=invalid"
     error_response = {
         "error": "video-not-found",
         "message": "Video Not Found",
@@ -145,14 +149,14 @@ def test_error_handling(client: Supadata, requests_mock) -> None:
         "documentationUrl": "https://docs.test.com/errors#video-not-found",
     }
     requests_mock.get(
-        f"{client.base_url}/youtube/transcript",
-        status_code=400,  # Changed from 404 to 400 since 404 is handled as gateway error
+        f"{client.base_url}/transcript",
+        status_code=400,
         json=error_response,
         headers={"content-type": "application/json"},
     )
 
     with pytest.raises(SupadataError) as exc_info:
-        client.youtube.transcript(video_id=video_id)
+        client.transcript(url=url)
 
     error = exc_info.value
     assert error.error == error_response["error"]
@@ -226,54 +230,72 @@ def test_get_crawl_results_failed(client: Supadata, requests_mock) -> None:
         client.web.get_crawl_results(job_id=job_id)
 
 
-def test_youtube_video(client: Supadata, requests_mock) -> None:
-    video_id = "pEfrdAtAmqk"
+def test_youtube_video_metadata(client: Supadata, requests_mock) -> None:
+    """Test getting YouTube video metadata via metadata endpoint."""
+    url = "https://www.youtube.com/watch?v=pEfrdAtAmqk"
     mock_response = {
-        "id": video_id,
-        "duration": 1002,
-        "description": "The programming iceberg is complete roadmap to the loved, ...",
+        "platform": "youtube",
+        "type": "video",
+        "id": "pEfrdAtAmqk",
+        "url": url,
         "title": "God-Tier Developer Roadmap",
-        "channel": {"id": "UCsBjURrPoezykLs9EqgamOA", "name": "Fireship"},
+        "description": "The programming iceberg is complete roadmap to the loved, ...",
+        "author": {
+            "username": "@Fireship",
+            "displayName": "Fireship",
+            "avatarUrl": "https://yt3.googleusercontent.com/avatar.jpg",
+            "verified": True
+        },
+        "stats": {
+            "views": 7388353,
+            "likes": 262086,
+            "comments": None,
+            "shares": None
+        },
+        "media": {
+            "video": {
+                "url": "https://video.url",
+                "duration": 1002,
+                "width": 1920,
+                "height": 1080,
+                "thumbnail": "https://i.ytimg.com/vi/pEfrdAtAmqk/maxresdefault.jpg"
+            }
+        },
         "tags": ["#iceberg", "#learntocode", "#programming"],
-        "thumbnail": "https://i.ytimg.com/vi/pEfrdAtAmqk/maxresdefault.jpg",
-        "uploadDate": "2022-08-24T00:00:00.000Z",
-        "viewCount": 7388353,
-        "likeCount": 262086,
-        "transcriptLanguages": ["en"],
+        "createdAt": "2022-08-24T00:00:00.000Z"
     }
 
-    requests_mock.get(
-        f"{client.base_url}/youtube/video?id={video_id}", json=mock_response
-    )
+    requests_mock.get(f"{client.base_url}/metadata", json=mock_response)
 
-    video = client.youtube.video(video_id)
-    assert isinstance(video, YoutubeVideo)
-    assert video.id == mock_response["id"]
-    assert video.duration == mock_response["duration"]
-    assert video.description == mock_response["description"]
-    assert video.title == mock_response["title"]
-    assert video.channel == mock_response["channel"]
-    assert video.tags == mock_response["tags"]
-    assert video.uploaded_date == datetime.fromisoformat(mock_response["uploadDate"])
-    assert video.view_count == mock_response["viewCount"]
-    assert video.like_count == mock_response["likeCount"]
+    metadata = client.metadata(url=url)
+    assert isinstance(metadata, Metadata)
+    assert metadata.platform == "youtube"
+    assert metadata.id == "pEfrdAtAmqk"
+    assert metadata.title == "God-Tier Developer Roadmap"
+    assert metadata.description == "The programming iceberg is complete roadmap to the loved, ..."
+    assert metadata.author.display_name == "Fireship"
+    assert metadata.stats.views == 7388353
+    assert metadata.stats.likes == 262086
+    assert metadata.media.video.duration == 1002
+    assert metadata.tags == ["#iceberg", "#learntocode", "#programming"]
 
 
-def test_youtube_video_invalid_id(client: Supadata, requests_mock) -> None:
-    video_id = "pEfrdAtmqk"
+def test_youtube_video_invalid_url(client: Supadata, requests_mock) -> None:
+    """Test error handling for invalid YouTube video URL."""
+    url = "https://www.youtube.com/watch?v=invalid"
     mock_response = {
         "error": "not-found",
         "message": "The requested item could not be found",
         "details": "The requested item could not be found.",
     }
     requests_mock.get(
-        f"{client.base_url}/youtube/video?id={video_id}",
+        f"{client.base_url}/metadata",
         status_code=404,
         json=mock_response,
     )
 
     with pytest.raises(SupadataError) as exc_info:
-        client.youtube.video(video_id)
+        client.metadata(url=url)
 
     error = exc_info.value
     assert error.error == "not-found"
@@ -769,8 +791,8 @@ def test_transcript_error_handling(client: Supadata, requests_mock) -> None:
 
 
 def test_youtube_transcript_206_error_handling(client: Supadata, requests_mock) -> None:
-    """Test YouTube transcript 206 response error handling."""
-    video_id = "6ciqyBnXIKQ"
+    """Test transcript 206 response error handling."""
+    url = "https://www.youtube.com/watch?v=6ciqyBnXIKQ"
     error_response = {
         "error": "transcript-unavailable",
         "message": "Transcript Unavailable",
@@ -778,13 +800,13 @@ def test_youtube_transcript_206_error_handling(client: Supadata, requests_mock) 
         "documentationUrl": "https://supadata.ai/documentation/errors/transcript-unavailable"
     }
     requests_mock.get(
-        f"{client.base_url}/youtube/transcript",
+        f"{client.base_url}/transcript",
         status_code=206,
         json=error_response,
     )
 
     with pytest.raises(SupadataError) as exc_info:
-        client.youtube.transcript(video_id=video_id)
+        client.transcript(url=url)
 
     error = exc_info.value
     assert error.error == "transcript-unavailable"
@@ -905,8 +927,241 @@ def test_youtube_search_api_error(client: Supadata, requests_mock) -> None:
 
     with pytest.raises(SupadataError) as exc_info:
         client.youtube.search(query=query)
-    
+
     error = exc_info.value
     assert error.error == "rate-limit-exceeded"
     assert error.message == "Rate limit exceeded"
     assert error.details == "Too many requests per minute"
+
+
+# --- Metadata Tests ---
+
+def test_metadata_youtube_video(client: Supadata, requests_mock) -> None:
+    """Test getting metadata for a YouTube video."""
+    url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    mock_response = {
+        "platform": "youtube",
+        "type": "video",
+        "id": "dQw4w9WgXcQ",
+        "url": url,
+        "title": "Rick Astley - Never Gonna Give You Up",
+        "description": "The official video for Never Gonna Give You Up",
+        "author": {
+            "username": "@RickAstley",
+            "displayName": "Rick Astley",
+            "avatarUrl": "https://yt3.googleusercontent.com/avatar.jpg",
+            "verified": True
+        },
+        "stats": {
+            "views": 1500000000,
+            "likes": 15000000,
+            "comments": 500000,
+            "shares": None
+        },
+        "media": {
+            "video": {
+                "url": "https://video.url",
+                "duration": 212,
+                "width": 1920,
+                "height": 1080,
+                "thumbnail": "https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg"
+            }
+        },
+        "tags": ["music", "80s", "rickroll"],
+        "createdAt": "2009-10-25T00:00:00.000Z"
+    }
+    requests_mock.get(f"{client.base_url}/metadata", json=mock_response)
+
+    metadata = client.metadata(url=url)
+    assert isinstance(metadata, Metadata)
+    assert metadata.platform == "youtube"
+    assert metadata.type == "video"
+    assert metadata.id == "dQw4w9WgXcQ"
+    assert metadata.url == url
+    assert metadata.title == "Rick Astley - Never Gonna Give You Up"
+    assert metadata.description == "The official video for Never Gonna Give You Up"
+
+    assert isinstance(metadata.author, MetadataAuthor)
+    assert metadata.author.username == "@RickAstley"
+    assert metadata.author.display_name == "Rick Astley"
+    assert metadata.author.verified is True
+
+    assert isinstance(metadata.stats, MetadataStats)
+    assert metadata.stats.views == 1500000000
+    assert metadata.stats.likes == 15000000
+    assert metadata.stats.comments == 500000
+
+    assert isinstance(metadata.media, MetadataMedia)
+    assert metadata.media.video is not None
+    assert metadata.media.video.duration == 212
+    assert metadata.media.video.width == 1920
+    assert metadata.media.video.height == 1080
+
+    assert metadata.tags == ["music", "80s", "rickroll"]
+    assert metadata.created_at is not None
+
+
+def test_metadata_tiktok_video(client: Supadata, requests_mock) -> None:
+    """Test getting metadata for a TikTok video."""
+    url = "https://www.tiktok.com/@user/video/1234567890"
+    mock_response = {
+        "platform": "tiktok",
+        "type": "video",
+        "id": "1234567890",
+        "url": url,
+        "title": None,
+        "description": "Check out this cool video! #fyp #trending",
+        "author": {
+            "username": "@cooluser",
+            "displayName": "Cool User",
+            "avatarUrl": "https://tiktok.com/avatar.jpg",
+            "verified": False
+        },
+        "stats": {
+            "views": 1000000,
+            "likes": 50000,
+            "comments": 2500,
+            "shares": 10000
+        },
+        "media": {
+            "video": {
+                "url": "https://video.url",
+                "duration": 30,
+                "width": 720,
+                "height": 1280,
+                "thumbnail": "https://tiktok.com/thumb.jpg"
+            }
+        },
+        "tags": ["fyp", "trending"],
+        "createdAt": "2025-01-15T12:00:00.000Z"
+    }
+    requests_mock.get(f"{client.base_url}/metadata", json=mock_response)
+
+    metadata = client.metadata(url=url)
+    assert isinstance(metadata, Metadata)
+    assert metadata.platform == "tiktok"
+    assert metadata.type == "video"
+    assert metadata.id == "1234567890"
+    assert metadata.title is None
+    assert metadata.description == "Check out this cool video! #fyp #trending"
+    assert metadata.author.username == "@cooluser"
+    assert metadata.author.verified is False
+    assert metadata.stats.shares == 10000
+    assert metadata.tags == ["fyp", "trending"]
+
+
+def test_metadata_instagram_carousel(client: Supadata, requests_mock) -> None:
+    """Test getting metadata for an Instagram carousel."""
+    url = "https://www.instagram.com/p/ABC123/"
+    mock_response = {
+        "platform": "instagram",
+        "type": "carousel",
+        "id": "ABC123",
+        "url": url,
+        "title": None,
+        "description": "Beautiful sunset photos from the beach",
+        "author": {
+            "username": "@photographer",
+            "displayName": "Photographer",
+            "avatarUrl": "https://instagram.com/avatar.jpg",
+            "verified": True
+        },
+        "stats": {
+            "views": None,
+            "likes": 25000,
+            "comments": 350,
+            "shares": None
+        },
+        "media": {
+            "carousel": [
+                {
+                    "type": "image",
+                    "image": {
+                        "url": "https://instagram.com/photo1.jpg",
+                        "width": 1080,
+                        "height": 1080
+                    }
+                },
+                {
+                    "type": "image",
+                    "image": {
+                        "url": "https://instagram.com/photo2.jpg",
+                        "width": 1080,
+                        "height": 1080
+                    }
+                }
+            ]
+        },
+        "tags": ["sunset", "beach", "photography"],
+        "createdAt": "2025-01-10T18:30:00.000Z"
+    }
+    requests_mock.get(f"{client.base_url}/metadata", json=mock_response)
+
+    metadata = client.metadata(url=url)
+    assert isinstance(metadata, Metadata)
+    assert metadata.platform == "instagram"
+    assert metadata.type == "carousel"
+    assert metadata.media.carousel is not None
+    assert len(metadata.media.carousel) == 2
+    assert metadata.media.carousel[0].type == "image"
+    assert metadata.media.carousel[0].image is not None
+    assert metadata.media.carousel[0].image.url == "https://instagram.com/photo1.jpg"
+
+
+def test_metadata_error_handling(client: Supadata, requests_mock) -> None:
+    """Test metadata error handling."""
+    url = "https://invalid-url.com"
+    error_response = {
+        "error": "unsupported-platform",
+        "message": "Unsupported Platform",
+        "details": "The specified platform is not supported"
+    }
+    requests_mock.get(
+        f"{client.base_url}/metadata",
+        status_code=400,
+        json=error_response
+    )
+
+    with pytest.raises(SupadataError) as exc_info:
+        client.metadata(url=url)
+
+    error = exc_info.value
+    assert error.error == "unsupported-platform"
+    assert error.message == "Unsupported Platform"
+    assert error.details == "The specified platform is not supported"
+
+
+def test_youtube_video_deprecation_warning(client: Supadata, requests_mock) -> None:
+    """Test that youtube.video() raises deprecation warning."""
+    video_id = "test123"
+    mock_response = {
+        "id": video_id,
+        "title": "Test Video",
+        "description": "Test",
+        "duration": 100,
+        "channel": {"id": "ch1", "name": "Channel 1"},
+        "tags": [],
+        "thumbnail": "https://test.com/thumb.jpg",
+        "uploadDate": "2024-01-01T00:00:00.000Z",
+        "viewCount": 1000,
+        "likeCount": 100,
+        "transcriptLanguages": []
+    }
+    requests_mock.get(f"{client.base_url}/youtube/video", json=mock_response)
+
+    with pytest.warns(DeprecationWarning, match="youtube.video\\(\\) is deprecated"):
+        client.youtube.video(video_id)
+
+
+def test_youtube_transcript_deprecation_warning(client: Supadata, requests_mock) -> None:
+    """Test that youtube.transcript() raises deprecation warning."""
+    video_id = "test123"
+    mock_response = {
+        "content": [{"text": "Hello", "offset": 0, "duration": 1000, "lang": "en"}],
+        "lang": "en",
+        "availableLangs": ["en"]
+    }
+    requests_mock.get(f"{client.base_url}/youtube/transcript", json=mock_response)
+
+    with pytest.warns(DeprecationWarning, match="youtube.transcript\\(\\) is deprecated"):
+        client.youtube.transcript(video_id)

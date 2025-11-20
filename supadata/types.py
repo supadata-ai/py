@@ -446,17 +446,17 @@ class YoutubeSearchResult:
 @dataclass
 class YoutubeSearchResponse:
     """Response from YouTube search endpoint.
-    
+
     Attributes:
         query: The search query used
         results: List of search results
         total_results: Estimated total number of results
     """
-    
+
     query: str
     results: List[YoutubeSearchResult] = field(default_factory=list)
     total_results: int = 0
-    
+
     def __post_init__(self):
         # Process results into YoutubeSearchResult objects
         processed_results = []
@@ -468,3 +468,166 @@ class YoutubeSearchResponse:
                 elif isinstance(item, YoutubeSearchResult):
                     processed_results.append(item)
         self.results = processed_results
+
+
+@dataclass
+class MetadataAuthor:
+    """Author information for media metadata.
+
+    Attributes:
+        username: Author's username/handle
+        display_name: Author's display name
+        avatar_url: URL to author's avatar image
+        verified: Whether the author is verified
+    """
+
+    username: str = ""
+    display_name: str = ""
+    avatar_url: Optional[str] = None
+    verified: bool = False
+
+
+@dataclass
+class MetadataStats:
+    """Statistics for media metadata.
+
+    Attributes:
+        views: Number of views
+        likes: Number of likes
+        comments: Number of comments
+        shares: Number of shares
+    """
+
+    views: Optional[int] = None
+    likes: Optional[int] = None
+    comments: Optional[int] = None
+    shares: Optional[int] = None
+
+
+@dataclass
+class MetadataVideoInfo:
+    """Video-specific metadata information.
+
+    Attributes:
+        url: Direct URL to the video file
+        duration: Duration in seconds
+        width: Video width in pixels
+        height: Video height in pixels
+        thumbnail: URL to video thumbnail
+    """
+
+    url: Optional[str] = None
+    duration: Optional[int] = None
+    width: Optional[int] = None
+    height: Optional[int] = None
+    thumbnail: Optional[str] = None
+
+
+@dataclass
+class MetadataImageInfo:
+    """Image-specific metadata information.
+
+    Attributes:
+        url: Direct URL to the image file
+        width: Image width in pixels
+        height: Image height in pixels
+    """
+
+    url: str
+    width: Optional[int] = None
+    height: Optional[int] = None
+
+
+@dataclass
+class MetadataCarouselItem:
+    """Item in a carousel/gallery.
+
+    Attributes:
+        type: Type of media (video or image)
+        video: Video information if type is video
+        image: Image information if type is image
+    """
+
+    type: str  # "video" or "image"
+    video: Optional[MetadataVideoInfo] = None
+    image: Optional[MetadataImageInfo] = None
+
+    def __post_init__(self):
+        if isinstance(self.video, dict):
+            self.video = MetadataVideoInfo(**self.video)
+        if isinstance(self.image, dict):
+            self.image = MetadataImageInfo(**self.image)
+
+
+@dataclass
+class MetadataMedia:
+    """Media information for metadata.
+
+    Attributes:
+        video: Video information (for video type)
+        image: Image information (for image type)
+        carousel: List of carousel items (for carousel type)
+        post: Post information (for post type)
+    """
+
+    video: Optional[MetadataVideoInfo] = None
+    image: Optional[MetadataImageInfo] = None
+    carousel: Optional[List[MetadataCarouselItem]] = None
+    post: Optional[dict] = None
+
+    def __post_init__(self):
+        if isinstance(self.video, dict):
+            self.video = MetadataVideoInfo(**self.video)
+        if isinstance(self.image, dict):
+            self.image = MetadataImageInfo(**self.image)
+        if isinstance(self.carousel, list):
+            self.carousel = [
+                item if isinstance(item, MetadataCarouselItem) else MetadataCarouselItem(**item)
+                for item in self.carousel
+            ]
+
+
+@dataclass
+class Metadata:
+    """Metadata for media from supported platforms.
+
+    Attributes:
+        platform: Platform name (youtube, tiktok, instagram, twitter)
+        type: Media type (video, image, carousel, post)
+        id: Unique platform-specific identifier
+        url: Canonical media URL
+        title: Media title
+        description: Media description/caption
+        author: Author information
+        stats: Media statistics
+        media: Detailed media information
+        tags: List of associated tags/hashtags
+        created_at: Timestamp of media creation
+        additional_data: Additional platform-specific data
+    """
+
+    platform: str
+    type: str
+    id: str
+    url: str
+    title: Optional[str] = None
+    description: Optional[str] = None
+    author: Optional[MetadataAuthor] = None
+    stats: Optional[MetadataStats] = None
+    media: Optional[MetadataMedia] = None
+    tags: List[str] = field(default_factory=list)
+    created_at: Optional[datetime] = None
+    additional_data: Optional[dict] = None
+
+    def __post_init__(self):
+        if isinstance(self.author, dict):
+            self.author = MetadataAuthor(**self.author)
+        if isinstance(self.stats, dict):
+            self.stats = MetadataStats(**self.stats)
+        if isinstance(self.media, dict):
+            self.media = MetadataMedia(**self.media)
+        if isinstance(self.created_at, str):
+            try:
+                self.created_at = datetime.fromisoformat(self.created_at.replace('Z', '+00:00'))
+            except ValueError:
+                self.created_at = None

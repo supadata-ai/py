@@ -1,5 +1,6 @@
 """YouTube-related operations for Supadata."""
 
+import warnings
 from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional, Literal
 
@@ -160,6 +161,9 @@ class _Video:
     def __call__(self, id: str) -> YoutubeVideo:
         """Get the video metadata for a YouTube video.
 
+        .. deprecated::
+            Use `supadata.metadata()` instead for unified metadata retrieval across platforms.
+
         Args:
             id: YouTube video ID or URL.
 
@@ -169,6 +173,11 @@ class _Video:
         Raises:
             SupadataError: If the API request fails.
         """
+        warnings.warn(
+            "supadata.youtube.video() is deprecated. Use supadata.metadata() instead for unified metadata retrieval across platforms.",
+            DeprecationWarning,
+            stacklevel=2
+        )
         response: dict = self._youtube._request("GET", "/youtube/video", params={"id": id})
 
         try:
@@ -227,6 +236,9 @@ class _Transcript:
     def __call__(self, video_id: str, lang: str = None, text: bool = False) -> Transcript:
         """Get transcript for a YouTube video.
 
+        .. deprecated::
+            Use `supadata.transcript()` instead for unified transcript retrieval across platforms.
+
         Args:
             video_id: YouTube video ID or URL.
             lang: Language code for preferred transcript (e.g., 'es'). Optional.
@@ -238,6 +250,11 @@ class _Transcript:
         Raises:
             SupadataError: If the API request fails.
         """
+        warnings.warn(
+            "supadata.youtube.transcript() is deprecated. Use supadata.transcript() instead for unified transcript retrieval across platforms.",
+            DeprecationWarning,
+            stacklevel=2
+        )
         params = {"videoId": video_id, "text": str(text).lower()}
         if lang:
             params["lang"] = lang
@@ -579,12 +596,13 @@ class YouTube:
     def video(self) -> _Video:
         """Access YouTube video operations.
 
-        Call directly with a video ID/URL to get metadata,
-        or access methods like `.batch()`.
+        DEPRECATED: Use `supadata.metadata()` for getting video metadata.
+
+        Access methods like `.batch()` for batch operations.
 
         Example:
             ```python
-            video_info = supadata.youtube.video(id="dQw4w9WgXcQ")
+            # For metadata, use: metadata = supadata.metadata(url="https://youtube.com/watch?v=...")
             batch_job = supadata.youtube.video.batch(video_ids=["dQw..."])
             ```
         Returns:
@@ -596,12 +614,13 @@ class YouTube:
     def transcript(self) -> _Transcript:
         """Access YouTube transcript operations.
 
-        Call directly with a video ID/URL to get its transcript,
-        or access methods like `.translate()` or `.batch()`.
+        DEPRECATED: Use `client.transcript()` for getting transcripts.
+
+        Access methods like `.translate()` or `.batch()` for other operations.
 
         Example:
             ```python
-            transcript = supadata.youtube.transcript(video_id="dQw4w9WgXcQ")
+            # For transcripts, use: transcript = client.transcript(url="https://youtube.com/watch?v=...")
             translated = supadata.youtube.transcript.translate(video_id="dQw...", lang="es")
             batch_job = supadata.youtube.transcript.batch(video_ids=["dQw..."])
             ```

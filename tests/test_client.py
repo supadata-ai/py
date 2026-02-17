@@ -959,6 +959,9 @@ def test_metadata_youtube_video(client: Supadata, requests_mock) -> None:
             "shares": None
         },
         "media": {
+            "type": "video",
+            "duration": 213,
+            "thumbnailUrl": "https://i.ytimg.com/vi_webp/dQw4w9WgXcQ/maxresdefault.webp",
             "video": {
                 "url": "https://video.url",
                 "duration": 212,
@@ -992,6 +995,9 @@ def test_metadata_youtube_video(client: Supadata, requests_mock) -> None:
     assert metadata.stats.comments == 500000
 
     assert isinstance(metadata.media, MetadataMedia)
+    assert metadata.media.type == "video"
+    assert metadata.media.duration == 213
+    assert metadata.media.thumbnail_url == "https://i.ytimg.com/vi_webp/dQw4w9WgXcQ/maxresdefault.webp"
     assert metadata.media.video is not None
     assert metadata.media.video.duration == 212
     assert metadata.media.video.width == 1920

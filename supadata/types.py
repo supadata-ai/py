@@ -564,12 +564,18 @@ class MetadataMedia:
     """Media information for metadata.
 
     Attributes:
+        type: Media type (video, image, carousel, post)
+        duration: Duration in seconds (for video)
+        thumbnail_url: URL to media thumbnail
         video: Video information (for video type)
         image: Image information (for image type)
         carousel: List of carousel items (for carousel type)
         post: Post information (for post type)
     """
 
+    type: Optional[str] = None
+    duration: Optional[int] = None
+    thumbnail_url: Optional[str] = None
     video: Optional[MetadataVideoInfo] = None
     image: Optional[MetadataImageInfo] = None
     carousel: Optional[List[MetadataCarouselItem]] = None

@@ -27,6 +27,8 @@ from supadata.types import (
     BatchResultItem,
     BatchResults,
     BatchStats,
+    ExtractJob,
+    ExtractResult,
     YoutubeSearchResponse,
     YoutubeSearchResult,
 )
@@ -1171,3 +1173,137 @@ def test_youtube_transcript_deprecation_warning(client: Supadata, requests_mock)
 
     with pytest.warns(DeprecationWarning, match="youtube.transcript\\(\\) is deprecated"):
         client.youtube.transcript(video_id)
+
+
+# --- Extract Tests ---
+
+def test_extract_start_job(client: Supadata, requests_mock) -> None:
+    """Test starting an extract job with a prompt."""
+    url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    mock_response = {"jobId": "extract-job-123"}
+    requests_mock.post(f"{client.base_url}/extract", json=mock_response)
+
+    job = client.extract(url=url, prompt="Extract the main topics and key takeaways")
+    assert isinstance(job, ExtractJob)
+    assert job.job_id == "extract-job-123"
+
+
+def test_extract_start_job_with_schema(client: Supadata, requests_mock) -> None:
+    """Test starting an extract job with a JSON schema."""
+    url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    schema = {
+        "type": "object",
+        "properties": {
+            "topics": {"type": "array", "items": {"type": "string"}},
+            "summary": {"type": "string"},
+        },
+        "required": ["topics", "summary"],
+    }
+    mock_response = {"jobId": "extract-job-456"}
+    requests_mock.post(f"{client.base_url}/extract", json=mock_response)
+
+    job = client.extract(url=url, schema=schema)
+    assert isinstance(job, ExtractJob)
+    assert job.job_id == "extract-job-456"
+
+
+def test_extract_get_results_completed(client: Supadata, requests_mock) -> None:
+    """Test getting completed extract results."""
+    job_id = "extract-job-123"
+    mock_response = {
+        "status": "completed",
+        "data": {
+            "topics": ["AI basics", "Machine learning", "Neural networks"],
+            "summary": "An introduction to artificial intelligence concepts",
+        },
+    }
+    requests_mock.get(f"{client.base_url}/extract/{job_id}", json=mock_response)
+
+    result = client.extract.get_results(job_id=job_id)
+    assert isinstance(result, ExtractResult)
+    assert result.status == "completed"
+    assert result.data["topics"] == ["AI basics", "Machine learning", "Neural networks"]
+    assert result.data["summary"] == "An introduction to artificial intelligence concepts"
+    assert result.error is None
+    assert result.schema is None
+
+
+def test_extract_get_results_completed_with_schema(client: Supadata, requests_mock) -> None:
+    """Test getting completed extract results that include a generated schema."""
+    job_id = "extract-job-789"
+    mock_response = {
+        "status": "completed",
+        "data": {"topics": ["Topic 1"], "summary": "A summary"},
+        "schema": {
+            "type": "object",
+            "properties": {
+                "topics": {"type": "array", "items": {"type": "string"}},
+                "summary": {"type": "string"},
+            },
+            "required": ["topics", "summary"],
+        },
+    }
+    requests_mock.get(f"{client.base_url}/extract/{job_id}", json=mock_response)
+
+    result = client.extract.get_results(job_id=job_id)
+    assert isinstance(result, ExtractResult)
+    assert result.status == "completed"
+    assert result.data is not None
+    assert result.schema is not None
+    assert result.schema["type"] == "object"
+
+
+def test_extract_get_results_queued(client: Supadata, requests_mock) -> None:
+    """Test getting extract results for a queued job."""
+    job_id = "extract-job-queued"
+    mock_response = {"status": "queued"}
+    requests_mock.get(f"{client.base_url}/extract/{job_id}", json=mock_response)
+
+    result = client.extract.get_results(job_id=job_id)
+    assert isinstance(result, ExtractResult)
+    assert result.status == "queued"
+    assert result.data is None
+    assert result.error is None
+
+
+def test_extract_get_results_failed(client: Supadata, requests_mock) -> None:
+    """Test getting extract results for a failed job."""
+    job_id = "extract-job-failed"
+    mock_response = {
+        "status": "failed",
+        "error": {
+            "error": "internal-error",
+            "message": "Internal Error",
+            "details": "An unexpected error occurred during extraction",
+        },
+    }
+    requests_mock.get(f"{client.base_url}/extract/{job_id}", json=mock_response)
+
+    result = client.extract.get_results(job_id=job_id)
+    assert isinstance(result, ExtractResult)
+    assert result.status == "failed"
+    assert result.error is not None
+    assert result.error["error"] == "internal-error"
+    assert result.data is None
+
+
+def test_extract_error_handling(client: Supadata, requests_mock) -> None:
+    """Test extract error handling for HTTP errors."""
+    url = "https://invalid-url.com"
+    error_response = {
+        "error": "invalid-request",
+        "message": "Invalid Request",
+        "details": "The url field is required",
+    }
+    requests_mock.post(
+        f"{client.base_url}/extract",
+        status_code=400,
+        json=error_response,
+    )
+
+    with pytest.raises(SupadataError) as exc_info:
+        client.extract(url=url, prompt="Extract topics")
+
+    error = exc_info.value
+    assert error.error == "invalid-request"
+    assert error.message == "Invalid Request"

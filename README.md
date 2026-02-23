@@ -53,6 +53,30 @@ else:
     # Poll for results using existing batch.get_batch_results method
 ```
 
+### Extract
+
+```python
+# Extract structured data from video using AI
+job = supadata.extract(
+    url="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    prompt="Extract the main topics and key takeaways",  # Optional if schema is provided
+    schema={  # Optional if prompt is provided
+        "type": "object",
+        "properties": {
+            "topics": {"type": "array", "items": {"type": "string"}},
+            "summary": {"type": "string"},
+        },
+        "required": ["topics", "summary"],
+    },
+)
+print(f"Started extract job: {job.job_id}")
+
+# Get extract results (poll until status is 'completed' or 'failed')
+result = supadata.extract.get_results(job_id=job.job_id)
+print(f"Status: {result.status}")
+print(f"Data: {result.data}")
+```
+
 ### YouTube
 
 ```python

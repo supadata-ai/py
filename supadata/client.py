@@ -9,7 +9,50 @@ from supadata.errors import SupadataError
 
 from .web import Web
 from .youtube import YouTube
-from .types import Transcript, BatchJob, Metadata
+from .types import Transcript, BatchJob, Metadata, ExtractJob, ExtractResult
+
+
+class _Extract:
+    """Extract namespace for starting extract jobs and getting results."""
+
+    def __init__(self, request_fn):
+        self._request = request_fn
+
+    def __call__(
+        self,
+        url: str,
+        prompt: str = None,
+        schema: dict = None,
+    ) -> ExtractJob:
+        """Start an extract job to analyze video content.
+
+        Args:
+            url: URL to any supported video media
+            prompt: Description of what data to extract (required if schema is not provided)
+            schema: JSON Schema defining the structure of data to extract (required if prompt is not provided)
+
+        Returns:
+            ExtractJob with job_id for polling results
+        """
+        body = {"url": url}
+        if prompt is not None:
+            body["prompt"] = prompt
+        if schema is not None:
+            body["schema"] = schema
+        response = self._request("POST", "/extract", json=body)
+        return ExtractJob(**response)
+
+    def get_results(self, job_id: str) -> ExtractResult:
+        """Get results for an extract job.
+
+        Args:
+            job_id: The extract job ID
+
+        Returns:
+            ExtractResult with status and extracted data
+        """
+        response = self._request("GET", f"/extract/{job_id}")
+        return ExtractResult(**response)
 
 
 class Supadata:
@@ -34,6 +77,7 @@ class Supadata:
         # Initialize namespaces
         self.youtube = YouTube(self._request)
         self.web = Web(self._request)
+        self.extract = _Extract(self._request)
 
     def metadata(self, url: str) -> Metadata:
         """Get metadata from a media URL.

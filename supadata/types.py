@@ -609,6 +609,18 @@ class MetadataMedia:
     carousel: Optional[List[MetadataCarouselItem]] = None
     post: Optional[dict] = None
 
+    def __init__(self, **kwargs):
+        # Filter out unknown fields before initializing
+        filtered = filter_dict_for_dataclass(kwargs, MetadataMedia)
+        self.type = filtered.get('type')
+        self.duration = filtered.get('duration')
+        self.thumbnail_url = filtered.get('thumbnail_url')
+        self.video = filtered.get('video')
+        self.image = filtered.get('image')
+        self.carousel = filtered.get('carousel')
+        self.post = filtered.get('post')
+        self.__post_init__()
+
     def __post_init__(self):
         if isinstance(self.video, dict):
             self.video = MetadataVideoInfo(**self.video)

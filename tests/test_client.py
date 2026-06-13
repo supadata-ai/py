@@ -130,6 +130,90 @@ def test_scrape(client: Supadata, requests_mock) -> None:
     assert content.count_characters == 100
 
 
+def test_scrape_with_no_links(client: Supadata, requests_mock) -> None:
+    """Test web scraping with noLinks parameter."""
+    url = "https://test.com"
+    mock_response = {
+        "url": url,
+        "content": "Test content without links",
+        "name": "Test Page",
+        "description": "A test page",
+        "ogUrl": None,
+        "countCharacters": 50,
+        "urls": [],
+    }
+    requests_mock.get(f"{client.base_url}/web/scrape", json=mock_response)
+
+    content = client.web.scrape(url=url, no_links=True)
+    assert isinstance(content, Scrape)
+    assert content.content == "Test content without links"
+    # Verify the noLinks parameter was sent in the request
+    assert "noLinks=true" in requests_mock.last_request.url
+
+
+def test_scrape_with_lang(client: Supadata, requests_mock) -> None:
+    """Test web scraping with lang parameter."""
+    url = "https://test.com"
+    mock_response = {
+        "url": url,
+        "content": "Contenido de prueba en español",
+        "name": "Página de prueba",
+        "description": "Una página de prueba",
+        "ogUrl": None,
+        "countCharacters": 80,
+        "urls": [],
+    }
+    requests_mock.get(f"{client.base_url}/web/scrape", json=mock_response)
+
+    content = client.web.scrape(url=url, lang="es")
+    assert isinstance(content, Scrape)
+    assert content.content == "Contenido de prueba en español"
+    # Verify the lang parameter was sent in the request
+    assert "lang=es" in requests_mock.last_request.url
+
+
+def test_scrape_with_no_links_and_lang(client: Supadata, requests_mock) -> None:
+    """Test web scraping with both noLinks and lang parameters."""
+    url = "https://test.com"
+    mock_response = {
+        "url": url,
+        "content": "Contenu sans liens",
+        "name": "Page de test",
+        "description": "Une page de test",
+        "ogUrl": None,
+        "countCharacters": 40,
+        "urls": [],
+    }
+    requests_mock.get(f"{client.base_url}/web/scrape", json=mock_response)
+
+    content = client.web.scrape(url=url, no_links=True, lang="fr")
+    assert isinstance(content, Scrape)
+    assert content.content == "Contenu sans liens"
+    # Verify both parameters were sent in the request
+    assert "noLinks=true" in requests_mock.last_request.url
+    assert "lang=fr" in requests_mock.last_request.url
+
+
+def test_scrape_with_no_links_false(client: Supadata, requests_mock) -> None:
+    """Test web scraping with noLinks=False parameter."""
+    url = "https://test.com"
+    mock_response = {
+        "url": url,
+        "content": "[Link](https://example.com) content with links",
+        "name": "Test Page",
+        "description": "A test page",
+        "ogUrl": None,
+        "countCharacters": 60,
+        "urls": ["https://example.com"],
+    }
+    requests_mock.get(f"{client.base_url}/web/scrape", json=mock_response)
+
+    content = client.web.scrape(url=url, no_links=False)
+    assert isinstance(content, Scrape)
+    # Verify the noLinks parameter was sent as "false"
+    assert "noLinks=false" in requests_mock.last_request.url
+
+
 def test_map(client: Supadata, requests_mock) -> None:
     """Test site mapping."""
     url = "https://test.com"

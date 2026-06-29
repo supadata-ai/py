@@ -512,7 +512,7 @@ def test_youtube_playlist_videos(client: Supadata, requests_mock) -> None:
         ]
     }
     requests_mock.get(
-        f"{client.base_url}/youtube/playlist/videos?id={playlist_id}",
+        f"{client.base_url}/youtube/playlist/videos?id={playlist_id}&type=all",
         json=mock_response,
     )
 
@@ -534,6 +534,27 @@ def test_youtube_playlist_videos(client: Supadata, requests_mock) -> None:
         assert i in mock_response["liveIds"]
 
 
+def test_youtube_playlist_videos_with_type(client: Supadata, requests_mock) -> None:
+    playlist_id = "PL0vfts4VzfNjQOM9VClyL5R0LeuTxlAR3"
+    mock_response = {
+        "videoIds": [],
+        "shortIds": [
+            "short1",
+            "short2",
+        ],
+        "liveIds": [],
+    }
+    requests_mock.get(
+        f"{client.base_url}/youtube/playlist/videos?id={playlist_id}&type=short",
+        json=mock_response,
+    )
+
+    playlist_videos = client.youtube.playlist.videos(playlist_id, type="short")
+    assert playlist_videos.video_ids == []
+    assert playlist_videos.short_ids == mock_response["shortIds"]
+    assert playlist_videos.live_ids == []
+
+
 def test_youtube_playlist_videos_invalid_id(client: Supadata, requests_mock) -> None:
     playlist_id = "PL0vfts4VzfNjQOM9VClyL50LeuTxlAR3"
     mock_response = {
@@ -543,7 +564,7 @@ def test_youtube_playlist_videos_invalid_id(client: Supadata, requests_mock) -> 
     }
 
     requests_mock.get(
-        f"{client.base_url}/youtube/playlist/videos?id={playlist_id}",
+        f"{client.base_url}/youtube/playlist/videos?id={playlist_id}&type=all",
         status_code=404,
         json=mock_response,
     )

@@ -108,6 +108,7 @@ print(f"Playlist: {playlist}")
 # Get video IDs from a YouTube playlist
 playlist_videos = supadata.youtube.playlist.videos(
     id="https://www.youtube.com/playlist?list=PLlaN88a7y2_plecYoJxvRFTLHVbIVAOoc",  # can be url or playlist id
+    type="all",  # 'all', 'video', 'short', or 'live'
     limit=50
 )
 print(f"Regular videos: {playlist_videos.video_ids}")

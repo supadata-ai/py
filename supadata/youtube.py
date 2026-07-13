@@ -124,25 +124,26 @@ class _Playlist:
 
         return YoutubePlaylist(**response, last_updated=last_updated)
 
-    def videos(self, id: str, limit: Optional[int] = None) -> VideoIds:
+    def videos(
+        self, id: str, limit: Optional[int] = None, type: Literal["all", "video", "short", "live"] = "all"
+    ) -> VideoIds:
         """Get video IDs from a YouTube playlist.
 
         Args:
             id: YouTube Playlist ID.
             limit: Max videos to return (default 30, max 5000).
+            type: Type of videos to include ('all', 'video', 'short', 'live'). Default 'all'.
 
         Returns:
-            VideoIds object containing lists of video IDs.
+            VideoIds object containing lists of video IDs, short IDs, and live IDs.
 
         Raises:
             SupadataError: If the API request fails or limit is invalid.
         """
         self._youtube._validate_limit(limit)
-        query_params = {"id": id}
+        query_params = {"id": id, "type": type}
         if limit:
             query_params["limit"] = limit
-        if type:
-            query_params["type"] = type
 
         response: dict = self._youtube._request(
             "GET", "/youtube/playlist/videos", params=query_params

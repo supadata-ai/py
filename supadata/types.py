@@ -62,6 +62,25 @@ class Transcript:
 
 
 @dataclass
+class TranscriptJobResult:
+    """Status and result of an asynchronous transcript job.
+
+    Attributes:
+        status: Current status of the job ('queued', 'active', 'completed', 'failed')
+        result: The Transcript when status is 'completed', otherwise None
+        error: Error information (error, message, details, documentation_url) if the job failed
+    """
+
+    status: str
+    result: Optional[Transcript] = None
+    error: Optional[dict] = None
+
+    def __post_init__(self):
+        if isinstance(self.result, dict):
+            self.result = Transcript(**filter_dict_for_dataclass(self.result, Transcript))
+
+
+@dataclass
 class TranslatedTranscript:
     """A translated video transcript.
 
@@ -479,11 +498,13 @@ class YoutubeSearchResponse:
         query: The search query used
         results: List of search results
         total_results: Estimated total number of results
+        next_page_token: Token to fetch the next page of results (None when no more pages)
     """
 
     query: str
     results: List[YoutubeSearchResult] = field(default_factory=list)
     total_results: int = 0
+    next_page_token: Optional[str] = None
 
     def __post_init__(self):
         # Process results into YoutubeSearchResult objects

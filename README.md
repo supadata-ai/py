@@ -50,7 +50,15 @@ if hasattr(transcript, 'content'):
 else:
     # For async processing (large files)
     print(f"Processing started with job ID: {transcript.job_id}")
-    # Poll for results using existing batch.get_batch_results method
+
+    # Poll for results until status is 'completed' or 'failed'
+    job = supadata.transcript.get_job_status(transcript.job_id)
+    if job.status == "completed":
+        print(f"Transcript: {job.result.content}")
+    elif job.status == "failed":
+        print(f"Transcript failed: {job.error}")
+    else:
+        print(f"Job status: {job.status}")  # 'queued' or 'active'
 ```
 
 ### Extract
@@ -122,10 +130,12 @@ search_results = supadata.youtube.search(
     duration="all",     # "all", "short", "medium", "long"
     sort_by="relevance", # "relevance", "rating", "date", "views"
     features=["hd", "subtitles"],  # Optional: filter by video features
-    limit=10            # Optional: number of results (1-5000)
+    limit=10,           # Optional: number of results (1-5000)
+    # next_page_token="...",  # Optional: token from a previous response for pagination
 )
 print(f"Found {search_results.total_results} total results")
 print(f"Query: {search_results.query}")
+print(f"Next page token: {search_results.next_page_token}")  # None when there are no more pages
 for result in search_results.results:
     print(f"Video: {result.title} by {result.channel['name']}")
     print(f"  ID: {result.id}")

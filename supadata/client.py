@@ -9,7 +9,15 @@ from supadata.errors import SupadataError
 
 from .web import Web
 from .youtube import YouTube
-from .types import Transcript, BatchJob, Metadata, ExtractJob, ExtractResult
+from .types import (
+    Transcript,
+    TranscriptJobResult,
+    BatchJob,
+    Metadata,
+    ExtractJob,
+    ExtractResult,
+    filter_dict_for_dataclass,
+)
 
 
 class _Extract:
@@ -55,6 +63,91 @@ class _Extract:
         return ExtractResult(**response)
 
 
+class _Transcript:
+    """Transcript namespace: callable to fetch a transcript, with job polling."""
+
+    def __init__(self, request_fn):
+        self._request = request_fn
+
+    def __call__(
+        self,
+        url: str,
+        lang: str = None,
+        text: bool = False,
+        chunk_size: int = None,
+        mode: str = "auto"
+    ) -> Union[Transcript, BatchJob]:
+        """Get transcript from a video URL.
+
+        Args:
+            url: Video URL from supported platforms (YouTube, TikTok, Instagram, Twitter) or file URL
+            lang: Optional preferred language code (ISO 639-1)
+            text: Return plain text transcript instead of timestamped chunks
+            chunk_size: Maximum characters per transcript chunk
+            mode: Transcript retrieval mode - "native", "auto", or "generate"
+
+        Returns:
+            Transcript object if transcript is available immediately,
+            or BatchJob with job_id for asynchronous processing.
+            Poll a BatchJob with `transcript.get_job_status(job_id)`.
+
+        Raises:
+            SupadataError: If the transcript request fails
+        """
+        params = {"url": url, "mode": mode}
+
+        if lang is not None:
+            params["lang"] = lang
+        if text:
+            params["text"] = str(text).lower()
+        if chunk_size is not None:
+            params["chunkSize"] = chunk_size
+
+        response = self._request("GET", "/transcript", params=params)
+
+        # Check if response contains a job_id (async processing)
+        if "job_id" in response:
+            return BatchJob(job_id=response["job_id"])
+
+        # Otherwise, return the transcript directly
+        return Transcript(**filter_dict_for_dataclass(response, Transcript))
+
+    def get_job_status(self, job_id: str) -> TranscriptJobResult:
+        """Get the status and result of an asynchronous transcript job.
+
+        Args:
+            job_id: The transcript job ID returned by `transcript(...)`
+
+        Returns:
+            TranscriptJobResult with status, and result (Transcript) when completed
+            or error when failed
+
+        Raises:
+            SupadataError: If job_id is missing or the API request fails
+        """
+        if not job_id:
+            raise SupadataError(
+                error="invalid-request",
+                message="Missing job_id",
+                details="The job_id parameter is required to get transcript job status.",
+            )
+
+        response = self._request("GET", f"/transcript/{job_id}")
+
+        status = response.get("status")
+        error = response.get("error")
+        result = response.get("result")
+
+        # The API returns the transcript fields (content, lang, available_langs)
+        # at the top level of a completed response; normalise them into `result`.
+        if result is None and "content" in response:
+            result = {
+                k: v for k, v in response.items() if k in ("content", "lang", "available_langs")
+            }
+
+        return TranscriptJobResult(status=status, result=result, error=error)
+
+
 class Supadata:
     """Main Supadata client."""
 
@@ -78,6 +171,7 @@ class Supadata:
         self.youtube = YouTube(self._request)
         self.web = Web(self._request)
         self.extract = _Extract(self._request)
+        self.transcript = _Transcript(self._request)
 
     def metadata(self, url: str) -> Metadata:
         """Get metadata from a media URL.
@@ -93,48 +187,6 @@ class Supadata:
         """
         response = self._request("GET", "/metadata", params={"url": url})
         return Metadata(**response)
-
-    def transcript(
-        self,
-        url: str,
-        lang: str = None,
-        text: bool = False,
-        chunk_size: int = None,
-        mode: str = "auto"
-    ) -> Union[Transcript, BatchJob]:
-        """Get transcript from a video URL.
-
-        Args:
-            url: Video URL from supported platforms (YouTube, TikTok, Instagram, Twitter) or file URL
-            lang: Optional preferred language code (ISO 639-1)
-            text: Return plain text transcript instead of timestamped chunks
-            chunk_size: Maximum characters per transcript chunk
-            mode: Transcript retrieval mode - "native", "auto", or "generate"
-
-        Returns:
-            Transcript object if transcript is available immediately,
-            or BatchJob with job_id for asynchronous processing
-
-        Raises:
-            SupadataError: If the transcript request fails
-        """
-        params = {"url": url, "mode": mode}
-
-        if lang is not None:
-            params["lang"] = lang
-        if text:
-            params["text"] = str(text).lower()
-        if chunk_size is not None:
-            params["chunkSize"] = chunk_size
-
-        response = self._request("GET", "/transcript", params=params)
-
-        # Check if response contains a job_id (async processing)
-        if "job_id" in response:
-            return BatchJob(job_id=response["job_id"])
-
-        # Otherwise, return the transcript directly
-        return Transcript(**response)
 
     def _camel_to_snake(self, d: Dict[str, Any]) -> Dict[str, Any]:
         """Convert dictionary keys from camelCase to snake_case."""

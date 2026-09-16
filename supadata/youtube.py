@@ -16,6 +16,7 @@ from .types import (
     BatchJob,
     BatchResults,
     YoutubeSearchResponse,
+    filter_dict_for_dataclass,
 )
 
 # Forward declare YouTube for type hints in private classes
@@ -484,6 +485,7 @@ class YouTube:
         sort_by: Literal["relevance", "rating", "date", "views"] = "relevance",
         features: Optional[List[Literal["hd", "subtitles", "creative-commons", "3d", "live", "4k", "360", "location", "hdr", "vr180"]]] = None,
         limit: Optional[int] = None,
+        next_page_token: Optional[str] = None,
     ) -> YoutubeSearchResponse:
         """Search for YouTube videos.
 
@@ -495,6 +497,7 @@ class YouTube:
             sort_by: Sort results by criteria. Default "relevance"
             features: List of video features to filter by
             limit: Number of results to return (1-5000). Enables automatic pagination
+            next_page_token: Token from a previous response to fetch the next page of results
 
         Returns:
             YoutubeSearchResponse object containing search results
@@ -529,8 +532,11 @@ class YouTube:
                 )
             params["limit"] = limit
 
+        if next_page_token:
+            params["nextPageToken"] = next_page_token
+
         response = self._request("GET", "/youtube/search", params=params)
-        return YoutubeSearchResponse(**response)
+        return YoutubeSearchResponse(**filter_dict_for_dataclass(response, YoutubeSearchResponse))
 
     def translate(
         self, video_id: str, lang: str, text: bool = False

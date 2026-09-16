@@ -16,6 +16,7 @@ from supadata import (
     Supadata,
     Transcript,
     TranscriptChunk,
+    TranscriptJobResult,
     TranslatedTranscript,
     YoutubeChannel,
     YoutubePlaylist,
@@ -1307,3 +1308,115 @@ def test_extract_error_handling(client: Supadata, requests_mock) -> None:
     error = exc_info.value
     assert error.error == "invalid-request"
     assert error.message == "Invalid Request"
+
+
+def test_transcript_get_job_status_completed(client: Supadata, requests_mock) -> None:
+    """Test polling a transcript job that has completed (flat API response)."""
+    job_id = "transcript-job-456"
+    mock_response = {
+        "status": "completed",
+        "content": [{"text": "Hello", "offset": 0, "duration": 1000, "lang": "en"}],
+        "lang": "en",
+        "availableLangs": ["en", "es"],
+    }
+    requests_mock.get(f"{client.base_url}/transcript/{job_id}", json=mock_response)
+
+    job = client.transcript.get_job_status(job_id)
+    assert isinstance(job, TranscriptJobResult)
+    assert job.status == "completed"
+    assert job.error is None
+    assert isinstance(job.result, Transcript)
+    assert job.result.lang == "en"
+    assert job.result.available_langs == ["en", "es"]
+    assert isinstance(job.result.content[0], TranscriptChunk)
+    assert job.result.content[0].text == "Hello"
+
+
+def test_transcript_get_job_status_nested_result(client: Supadata, requests_mock) -> None:
+    """Test polling a transcript job whose response nests the transcript under result."""
+    job_id = "transcript-job-789"
+    mock_response = {
+        "status": "completed",
+        "result": {"content": "Hello world", "lang": "en", "availableLangs": ["en"]},
+    }
+    requests_mock.get(f"{client.base_url}/transcript/{job_id}", json=mock_response)
+
+    job = client.transcript.get_job_status(job_id)
+    assert job.status == "completed"
+    assert isinstance(job.result, Transcript)
+    assert job.result.content == "Hello world"
+
+
+def test_transcript_get_job_status_active(client: Supadata, requests_mock) -> None:
+    """Test polling a transcript job that is still running."""
+    job_id = "transcript-job-active"
+    requests_mock.get(f"{client.base_url}/transcript/{job_id}", json={"status": "active"})
+
+    job = client.transcript.get_job_status(job_id)
+    assert job.status == "active"
+    assert job.result is None
+    assert job.error is None
+
+
+def test_transcript_get_job_status_failed(client: Supadata, requests_mock) -> None:
+    """Test polling a transcript job that failed."""
+    job_id = "transcript-job-failed"
+    mock_response = {
+        "status": "failed",
+        "error": {
+            "error": "transcript-unavailable",
+            "message": "Transcript not available",
+            "details": "The video does not have a transcript available",
+            "documentationUrl": "https://docs.supadata.ai/errors#transcript-unavailable",
+        },
+    }
+    requests_mock.get(f"{client.base_url}/transcript/{job_id}", json=mock_response)
+
+    job = client.transcript.get_job_status(job_id)
+    assert job.status == "failed"
+    assert job.result is None
+    assert job.error["error"] == "transcript-unavailable"
+    assert job.error["documentation_url"] == "https://docs.supadata.ai/errors#transcript-unavailable"
+
+
+def test_transcript_get_job_status_missing_job_id(client: Supadata) -> None:
+    """Test that get_job_status rejects an empty job_id without a request."""
+    with pytest.raises(SupadataError) as exc_info:
+        client.transcript.get_job_status("")
+    assert exc_info.value.error == "invalid-request"
+
+
+def test_transcript_get_job_status_not_found(client: Supadata, requests_mock) -> None:
+    """Test that a 404 from the job status endpoint raises SupadataError."""
+    job_id = "missing-job"
+    requests_mock.get(
+        f"{client.base_url}/transcript/{job_id}",
+        status_code=404,
+        json={"error": "not-found", "message": "Not Found", "details": "Job not found"},
+    )
+
+    with pytest.raises(SupadataError) as exc_info:
+        client.transcript.get_job_status(job_id)
+    assert exc_info.value.error == "not-found"
+
+
+def test_youtube_search_next_page_token(client: Supadata, requests_mock) -> None:
+    """Test that next_page_token is forwarded as the nextPageToken query param."""
+    mock_response = {"query": "python", "results": [], "totalResults": 0, "nextPageToken": "NEXT456"}
+    m = requests_mock.get(f"{client.base_url}/youtube/search", json=mock_response)
+
+    search_response = client.youtube.search(query="python", next_page_token="TOKEN123")
+
+    assert search_response.next_page_token == "NEXT456"
+    assert m.called
+    assert m.last_request.qs["nextpagetoken"] == ["token123"]
+
+
+def test_youtube_search_no_next_page_token_by_default(client: Supadata, requests_mock) -> None:
+    """Test that nextPageToken is omitted when next_page_token is not given."""
+    mock_response = {"query": "python", "results": [], "totalResults": 0}
+    m = requests_mock.get(f"{client.base_url}/youtube/search", json=mock_response)
+
+    client.youtube.search(query="python")
+
+    assert "nextpagetoken" not in m.last_request.qs

@@ -186,6 +186,7 @@ class Supadata:
             SupadataError: If the metadata request fails
         """
         response = self._request("GET", "/metadata", params={"url": url})
+        response["url"] = url  # Ensure URL is included in response
         return Metadata(**response)
 
     def _camel_to_snake(self, d: Dict[str, Any]) -> Dict[str, Any]:

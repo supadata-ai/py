@@ -23,6 +23,15 @@ from .types import (
 class YouTube:
     pass
 
+
+def _video_ids_from_response(response: dict) -> VideoIds:
+    return VideoIds(
+        video_ids=response.get("video_ids", response.get("videoIds", [])),
+        short_ids=response.get("short_ids", response.get("shortIds", [])),
+        live_ids=response.get("live_ids", response.get("liveIds", [])),
+    )
+
+
 # --------------------------------------------------------------------------
 # Private Classes for API Namespaces
 # --------------------------------------------------------------------------
@@ -80,11 +89,7 @@ class _Channel:
         response: dict = self._youtube._request(
             "GET", "/youtube/channel/videos", params=query_params
         )
-        return VideoIds(
-            video_ids=response.get("video_ids", []),
-            short_ids=response.get("short_ids", []),
-            live_ids=response.get("live_ids", [])
-        )
+        return _video_ids_from_response(response)
 
 
 
@@ -125,12 +130,18 @@ class _Playlist:
 
         return YoutubePlaylist(**response, last_updated=last_updated)
 
-    def videos(self, id: str, limit: Optional[int] = None) -> VideoIds:
+    def videos(
+        self,
+        id: str,
+        limit: Optional[int] = None,
+        type: Literal["all", "video", "short", "live"] = "all",
+    ) -> VideoIds:
         """Get video IDs from a YouTube playlist.
 
         Args:
             id: YouTube Playlist ID.
             limit: Max videos to return (default 30, max 5000).
+            type: Type of videos ('all', 'video', 'short', 'live'). Default 'all'.
 
         Returns:
             VideoIds object containing lists of video IDs.
@@ -139,20 +150,14 @@ class _Playlist:
             SupadataError: If the API request fails or limit is invalid.
         """
         self._youtube._validate_limit(limit)
-        query_params = {"id": id}
+        query_params = {"id": id, "type": type}
         if limit:
             query_params["limit"] = limit
-        if type:
-            query_params["type"] = type
 
         response: dict = self._youtube._request(
             "GET", "/youtube/playlist/videos", params=query_params
         )
-        return VideoIds(
-            video_ids=response.get("video_ids", []),
-            short_ids=response.get("short_ids", []),
-            live_ids=response.get("live_ids", [])
-        )
+        return _video_ids_from_response(response)
 
 
 class _Video:
@@ -650,4 +655,3 @@ class YouTube:
             An object for batch result operations.
         """
         return _Batch(self) # Return a new instance each time
-

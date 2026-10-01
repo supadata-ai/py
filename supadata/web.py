@@ -16,11 +16,18 @@ class Web:
         """
         self._request = request_handler
 
-    def scrape(self, url: str) -> Scrape:
+    def scrape(
+        self,
+        url: str,
+        no_links: Optional[bool] = None,
+        lang: Optional[str] = None,
+    ) -> Scrape:
         """Scrape content from a web page.
 
         Args:
             url: URL to scrape
+            no_links: Whether to exclude Markdown links from the response
+            lang: Language to request content in (ISO 639-1 code, e.g. "en", "es")
 
         Returns:
             Scrape object containing the extracted content
@@ -28,7 +35,13 @@ class Web:
         Raises:
             SupadataError: If the API request fails
         """
-        response = self._request("GET", "/web/scrape", params={"url": url})
+        params: Dict[str, Union[str, bool]] = {"url": url}
+        if no_links is not None:
+            params["noLinks"] = str(no_links).lower()
+        if lang is not None:
+            params["lang"] = lang
+
+        response = self._request("GET", "/web/scrape", params=params)
         return Scrape(**response)
 
     def map(self, url: str) -> Map:

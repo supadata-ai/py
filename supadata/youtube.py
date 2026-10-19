@@ -197,7 +197,9 @@ class _Video:
             elif key == "channel" and not isinstance(response[key], dict):
                 response[key] = defaults[key]
 
-        return YoutubeVideo(**response, uploaded_date=uploaded_time)
+        filtered_response = filter_dict_for_dataclass(response, YoutubeVideo)
+        filtered_response.pop("uploaded_date", None)
+        return YoutubeVideo(**filtered_response, uploaded_date=uploaded_time)
 
     def batch(
         self,

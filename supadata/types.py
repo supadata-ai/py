@@ -431,7 +431,13 @@ class BatchResults:
                             uploaded_time = datetime.fromisoformat(video_data.pop("upload_date", datetime.now().isoformat()))
                         except (ValueError, TypeError):
                             uploaded_time = datetime.now()
-                        video_obj = YoutubeVideo(**video_data, uploaded_date=uploaded_time)
+                        filtered_video_data = filter_dict_for_dataclass(
+                            video_data, YoutubeVideo
+                        )
+                        filtered_video_data.pop("uploaded_date", None)
+                        video_obj = YoutubeVideo(
+                            **filtered_video_data, uploaded_date=uploaded_time
+                        )
 
                     # Explicitly get values before creating the object
                     # Use 'video_id' (snake_case) as the key might be auto-converted by dataclass init

@@ -605,7 +605,6 @@ def test_youtube_batch_video_validation_multiple_sources(client: Supadata) -> No
     with pytest.raises(SupadataError, match="Multiple sources"):
         client.youtube.video.batch(video_ids=["vid1"], channel_id="ch1")
 
-
 def test_youtube_get_batch_results_completed(client: Supadata, requests_mock) -> None:
     """Test getting completed YouTube batch results."""
     job_id = "batch-job-789"
@@ -614,6 +613,11 @@ def test_youtube_get_batch_results_completed(client: Supadata, requests_mock) ->
         "results": [
             {
                 "videoId": "vid1",
+                "video": {
+                    "id": "vid1",
+                    "title": "Batch video",
+                    "access_status": "member_only",
+                },
                 "transcript": {
                     "content": "Transcript 1",
                     "lang": "en",
@@ -625,9 +629,13 @@ def test_youtube_get_batch_results_completed(client: Supadata, requests_mock) ->
         "stats": {"total": 2, "succeeded": 1, "failed": 1},
         "completedAt": "2025-04-03T06:59:53.428Z",
     }
-    requests_mock.get(f"{client.base_url}/youtube/batch/{job_id}", json=mock_response)
+    requests_mock.get(
+        f"{client.base_url}/youtube/batch/{job_id}",
+        json=mock_response,
+    )
 
     results = client.youtube.batch.get_batch_results(job_id=job_id)
+
     assert isinstance(results, BatchResults)
     assert results.status == "completed"
     assert isinstance(results.stats, BatchStats)
@@ -636,15 +644,18 @@ def test_youtube_get_batch_results_completed(client: Supadata, requests_mock) ->
     assert results.stats.failed == 1
     assert isinstance(results.completed_at, datetime)
     assert len(results.results) == 2
+
     assert isinstance(results.results[0], BatchResultItem)
     assert results.results[0].video_id == "vid1"
     assert isinstance(results.results[0].transcript, Transcript)
     assert results.results[0].transcript.content == "Transcript 1"
+    assert isinstance(results.results[0].video, YoutubeVideo)
+    assert results.results[0].video.title == "Batch video"
     assert results.results[0].error_code is None
+
     assert results.results[1].video_id == "vid2"
     assert results.results[1].transcript is None
     assert results.results[1].error_code == "transcript-unavailable"
-
 
 def test_youtube_get_batch_results_active(client: Supadata, requests_mock) -> None:
     """Test getting active YouTube batch results."""
@@ -1154,12 +1165,21 @@ def test_youtube_video_deprecation_warning(client: Supadata, requests_mock) -> N
         "uploadDate": "2024-01-01T00:00:00.000Z",
         "viewCount": 1000,
         "likeCount": 100,
-        "transcriptLanguages": []
+        "transcriptLanguages": [],
+        "access_status": "member_only",
     }
-    requests_mock.get(f"{client.base_url}/youtube/video", json=mock_response)
+    requests_mock.get(
+        f"{client.base_url}/youtube/video",
+        json=mock_response,
+    )
 
-    with pytest.warns(DeprecationWarning, match="youtube.video\\(\\) is deprecated"):
-        client.youtube.video(video_id)
+    with pytest.warns(
+        DeprecationWarning,
+        match="youtube.video\\(\\) is deprecated",
+    ):
+        video = client.youtube.video(video_id)
+        assert video.title == "Test Video"
+        assert video.id == video_id
 
 
 def test_youtube_transcript_deprecation_warning(client: Supadata, requests_mock) -> None:
